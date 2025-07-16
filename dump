@@ -5,7 +5,7 @@
 -- Dumped from database version 16.9 (Debian 16.9-1.pgdg120+1)
 -- Dumped by pg_dump version 16.9
 
--- Started on 2025-07-16 13:04:42 UTC
+-- Started on 2025-07-16 13:27:05 UTC
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -20,18 +20,16 @@ SET row_security = off;
 
 --
 -- TOC entry 5 (class 2615 OID 16967)
--- Name: public; Type: SCHEMA; Schema: -; Owner: pg_database_owner
+-- Name: public; Type: SCHEMA; Schema: -; Owner: -
 --
 
 CREATE SCHEMA public;
 
 
-ALTER SCHEMA public OWNER TO pg_database_owner;
-
 --
 -- TOC entry 3465 (class 0 OID 0)
 -- Dependencies: 5
--- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: pg_database_owner
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
 --
 
 COMMENT ON SCHEMA public IS 'standard public schema';
@@ -39,7 +37,7 @@ COMMENT ON SCHEMA public IS 'standard public schema';
 
 --
 -- TOC entry 228 (class 1255 OID 16968)
--- Name: check_data_caricamento(); Type: FUNCTION; Schema: public; Owner: myuser
+-- Name: check_data_caricamento(); Type: FUNCTION; Schema: public; Owner: -
 --
 
 CREATE FUNCTION public.check_data_caricamento() RETURNS trigger
@@ -65,11 +63,9 @@ END;
 $$;
 
 
-ALTER FUNCTION public.check_data_caricamento() OWNER TO myuser;
-
 --
 -- TOC entry 229 (class 1255 OID 16969)
--- Name: check_data_caricamento_documento(); Type: FUNCTION; Schema: public; Owner: myuser
+-- Name: check_data_caricamento_documento(); Type: FUNCTION; Schema: public; Owner: -
 --
 
 CREATE FUNCTION public.check_data_caricamento_documento() RETURNS trigger
@@ -95,11 +91,9 @@ END;
 $$;
 
 
-ALTER FUNCTION public.check_data_caricamento_documento() OWNER TO myuser;
-
 --
 -- TOC entry 230 (class 1255 OID 16970)
--- Name: check_hackathon_overlap(); Type: FUNCTION; Schema: public; Owner: myuser
+-- Name: check_hackathon_overlap(); Type: FUNCTION; Schema: public; Owner: -
 --
 
 CREATE FUNCTION public.check_hackathon_overlap() RETURNS trigger
@@ -124,11 +118,9 @@ END;
 $$;
 
 
-ALTER FUNCTION public.check_hackathon_overlap() OWNER TO myuser;
-
 --
 -- TOC entry 231 (class 1255 OID 16971)
--- Name: check_max_partecipanti(); Type: FUNCTION; Schema: public; Owner: myuser
+-- Name: check_max_partecipanti(); Type: FUNCTION; Schema: public; Owner: -
 --
 
 CREATE FUNCTION public.check_max_partecipanti() RETURNS trigger
@@ -155,11 +147,9 @@ END;
 $$;
 
 
-ALTER FUNCTION public.check_max_partecipanti() OWNER TO myuser;
-
 --
 -- TOC entry 232 (class 1255 OID 16972)
--- Name: check_max_partecipanti_per_team(); Type: FUNCTION; Schema: public; Owner: myuser
+-- Name: check_max_partecipanti_per_team(); Type: FUNCTION; Schema: public; Owner: -
 --
 
 CREATE FUNCTION public.check_max_partecipanti_per_team() RETURNS trigger
@@ -188,11 +178,9 @@ END;
 $$;
 
 
-ALTER FUNCTION public.check_max_partecipanti_per_team() OWNER TO myuser;
-
 --
 -- TOC entry 233 (class 1255 OID 16973)
--- Name: check_max_team(); Type: FUNCTION; Schema: public; Owner: myuser
+-- Name: check_max_team(); Type: FUNCTION; Schema: public; Owner: -
 --
 
 CREATE FUNCTION public.check_max_team() RETURNS trigger
@@ -219,11 +207,9 @@ END;
 $$;
 
 
-ALTER FUNCTION public.check_max_team() OWNER TO myuser;
-
 --
 -- TOC entry 234 (class 1255 OID 16974)
--- Name: check_unique_participant_per_hackathon(); Type: FUNCTION; Schema: public; Owner: myuser
+-- Name: check_unique_participant_per_hackathon(); Type: FUNCTION; Schema: public; Owner: -
 --
 
 CREATE FUNCTION public.check_unique_participant_per_hackathon() RETURNS trigger
@@ -249,11 +235,9 @@ END;
 $$;
 
 
-ALTER FUNCTION public.check_unique_participant_per_hackathon() OWNER TO myuser;
-
 --
 -- TOC entry 235 (class 1255 OID 16975)
--- Name: chiudi_registrazioni_scadute(); Type: PROCEDURE; Schema: public; Owner: myuser
+-- Name: chiudi_registrazioni_scadute(); Type: PROCEDURE; Schema: public; Owner: -
 --
 
 CREATE PROCEDURE public.chiudi_registrazioni_scadute()
@@ -268,11 +252,9 @@ END;
 $$;
 
 
-ALTER PROCEDURE public.chiudi_registrazioni_scadute() OWNER TO myuser;
-
 --
 -- TOC entry 236 (class 1255 OID 16976)
--- Name: classifica_team(integer); Type: FUNCTION; Schema: public; Owner: myuser
+-- Name: classifica_team(integer); Type: FUNCTION; Schema: public; Owner: -
 --
 
 CREATE FUNCTION public.classifica_team(id_evento integer) RETURNS text
@@ -300,11 +282,9 @@ END;
 $$;
 
 
-ALTER FUNCTION public.classifica_team(id_evento integer) OWNER TO myuser;
-
 --
 -- TOC entry 237 (class 1255 OID 16977)
--- Name: documenti_team(character varying); Type: FUNCTION; Schema: public; Owner: myuser
+-- Name: documenti_team(character varying); Type: FUNCTION; Schema: public; Owner: -
 --
 
 CREATE FUNCTION public.documenti_team(nome_team character varying) RETURNS text
@@ -330,11 +310,9 @@ END;
 $$;
 
 
-ALTER FUNCTION public.documenti_team(nome_team character varying) OWNER TO myuser;
-
 --
 -- TOC entry 238 (class 1255 OID 16978)
--- Name: media_voti_team(text); Type: FUNCTION; Schema: public; Owner: myuser
+-- Name: media_voti_team(text); Type: FUNCTION; Schema: public; Owner: -
 --
 
 CREATE FUNCTION public.media_voti_team(nome text) RETURNS numeric
@@ -352,11 +330,9 @@ END;
 $$;
 
 
-ALTER FUNCTION public.media_voti_team(nome text) OWNER TO myuser;
-
 --
 -- TOC entry 239 (class 1255 OID 16979)
--- Name: partecipanti_hackathon(integer); Type: FUNCTION; Schema: public; Owner: myuser
+-- Name: partecipanti_hackathon(integer); Type: FUNCTION; Schema: public; Owner: -
 --
 
 CREATE FUNCTION public.partecipanti_hackathon(id_hackaton integer) RETURNS text
@@ -384,15 +360,13 @@ END;
 $$;
 
 
-ALTER FUNCTION public.partecipanti_hackathon(id_hackaton integer) OWNER TO myuser;
-
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
 --
 -- TOC entry 215 (class 1259 OID 16980)
--- Name: commento; Type: TABLE; Schema: public; Owner: myuser
+-- Name: commento; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.commento (
@@ -402,11 +376,9 @@ CREATE TABLE public.commento (
 );
 
 
-ALTER TABLE public.commento OWNER TO myuser;
-
 --
 -- TOC entry 216 (class 1259 OID 16985)
--- Name: documento; Type: TABLE; Schema: public; Owner: myuser
+-- Name: documento; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.documento (
@@ -417,11 +389,9 @@ CREATE TABLE public.documento (
 );
 
 
-ALTER TABLE public.documento OWNER TO myuser;
-
 --
 -- TOC entry 217 (class 1259 OID 16990)
--- Name: documento_id_doc_seq; Type: SEQUENCE; Schema: public; Owner: myuser
+-- Name: documento_id_doc_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.documento_id_doc_seq
@@ -433,12 +403,10 @@ CREATE SEQUENCE public.documento_id_doc_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.documento_id_doc_seq OWNER TO myuser;
-
 --
 -- TOC entry 3467 (class 0 OID 0)
 -- Dependencies: 217
--- Name: documento_id_doc_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: myuser
+-- Name: documento_id_doc_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.documento_id_doc_seq OWNED BY public.documento.id_doc;
@@ -446,7 +414,7 @@ ALTER SEQUENCE public.documento_id_doc_seq OWNED BY public.documento.id_doc;
 
 --
 -- TOC entry 218 (class 1259 OID 16991)
--- Name: giudice; Type: TABLE; Schema: public; Owner: myuser
+-- Name: giudice; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.giudice (
@@ -457,11 +425,9 @@ CREATE TABLE public.giudice (
 );
 
 
-ALTER TABLE public.giudice OWNER TO myuser;
-
 --
 -- TOC entry 219 (class 1259 OID 16995)
--- Name: hackathon; Type: TABLE; Schema: public; Owner: myuser
+-- Name: hackathon; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.hackathon (
@@ -482,11 +448,9 @@ CREATE TABLE public.hackathon (
 );
 
 
-ALTER TABLE public.hackathon OWNER TO myuser;
-
 --
 -- TOC entry 220 (class 1259 OID 17004)
--- Name: hackathon_id_hackathon_seq; Type: SEQUENCE; Schema: public; Owner: myuser
+-- Name: hackathon_id_hackathon_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.hackathon_id_hackathon_seq
@@ -498,12 +462,10 @@ CREATE SEQUENCE public.hackathon_id_hackathon_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.hackathon_id_hackathon_seq OWNER TO myuser;
-
 --
 -- TOC entry 3468 (class 0 OID 0)
 -- Dependencies: 220
--- Name: hackathon_id_hackathon_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: myuser
+-- Name: hackathon_id_hackathon_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.hackathon_id_hackathon_seq OWNED BY public.hackathon.id_hackathon;
@@ -511,7 +473,7 @@ ALTER SEQUENCE public.hackathon_id_hackathon_seq OWNED BY public.hackathon.id_ha
 
 --
 -- TOC entry 221 (class 1259 OID 17005)
--- Name: invitogiudice; Type: TABLE; Schema: public; Owner: myuser
+-- Name: invitogiudice; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.invitogiudice (
@@ -520,11 +482,9 @@ CREATE TABLE public.invitogiudice (
 );
 
 
-ALTER TABLE public.invitogiudice OWNER TO myuser;
-
 --
 -- TOC entry 222 (class 1259 OID 17008)
--- Name: organizzatore; Type: TABLE; Schema: public; Owner: myuser
+-- Name: organizzatore; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.organizzatore (
@@ -535,11 +495,9 @@ CREATE TABLE public.organizzatore (
 );
 
 
-ALTER TABLE public.organizzatore OWNER TO myuser;
-
 --
 -- TOC entry 223 (class 1259 OID 17011)
--- Name: partecipante; Type: TABLE; Schema: public; Owner: myuser
+-- Name: partecipante; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.partecipante (
@@ -550,11 +508,9 @@ CREATE TABLE public.partecipante (
 );
 
 
-ALTER TABLE public.partecipante OWNER TO myuser;
-
 --
 -- TOC entry 224 (class 1259 OID 17014)
--- Name: partecipante_team; Type: TABLE; Schema: public; Owner: myuser
+-- Name: partecipante_team; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.partecipante_team (
@@ -563,11 +519,9 @@ CREATE TABLE public.partecipante_team (
 );
 
 
-ALTER TABLE public.partecipante_team OWNER TO myuser;
-
 --
 -- TOC entry 225 (class 1259 OID 17017)
--- Name: registrazione; Type: TABLE; Schema: public; Owner: myuser
+-- Name: registrazione; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.registrazione (
@@ -576,11 +530,9 @@ CREATE TABLE public.registrazione (
 );
 
 
-ALTER TABLE public.registrazione OWNER TO myuser;
-
 --
 -- TOC entry 226 (class 1259 OID 17020)
--- Name: team; Type: TABLE; Schema: public; Owner: myuser
+-- Name: team; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.team (
@@ -589,11 +541,9 @@ CREATE TABLE public.team (
 );
 
 
-ALTER TABLE public.team OWNER TO myuser;
-
 --
 -- TOC entry 227 (class 1259 OID 17023)
--- Name: voto; Type: TABLE; Schema: public; Owner: myuser
+-- Name: voto; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.voto (
@@ -604,11 +554,9 @@ CREATE TABLE public.voto (
 );
 
 
-ALTER TABLE public.voto OWNER TO myuser;
-
 --
 -- TOC entry 3256 (class 2604 OID 17027)
--- Name: documento id_doc; Type: DEFAULT; Schema: public; Owner: myuser
+-- Name: documento id_doc; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.documento ALTER COLUMN id_doc SET DEFAULT nextval('public.documento_id_doc_seq'::regclass);
@@ -616,7 +564,7 @@ ALTER TABLE ONLY public.documento ALTER COLUMN id_doc SET DEFAULT nextval('publi
 
 --
 -- TOC entry 3258 (class 2604 OID 17028)
--- Name: hackathon id_hackathon; Type: DEFAULT; Schema: public; Owner: myuser
+-- Name: hackathon id_hackathon; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.hackathon ALTER COLUMN id_hackathon SET DEFAULT nextval('public.hackathon_id_hackathon_seq'::regclass);
@@ -625,7 +573,7 @@ ALTER TABLE ONLY public.hackathon ALTER COLUMN id_hackathon SET DEFAULT nextval(
 --
 -- TOC entry 3447 (class 0 OID 16980)
 -- Dependencies: 215
--- Data for Name: commento; Type: TABLE DATA; Schema: public; Owner: myuser
+-- Data for Name: commento; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 INSERT INTO public.commento VALUES ('prof.martini@unibo.it', 1, 'Progetto molto interessante, l''approccio AI è innovativo');
@@ -647,7 +595,7 @@ INSERT INTO public.commento VALUES ('dott.conti@polimi.it', 14, 'App per parteci
 --
 -- TOC entry 3448 (class 0 OID 16985)
 -- Dependencies: 216
--- Data for Name: documento; Type: TABLE DATA; Schema: public; Owner: myuser
+-- Data for Name: documento; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 INSERT INTO public.documento VALUES (1, 'Presentazione del progetto AI per diagnosi medica', '2024-03-16', 'AIMinds');
@@ -669,7 +617,7 @@ INSERT INTO public.documento VALUES (14, 'App per la partecipazione civica', '20
 --
 -- TOC entry 3450 (class 0 OID 16991)
 -- Dependencies: 218
--- Data for Name: giudice; Type: TABLE DATA; Schema: public; Owner: myuser
+-- Data for Name: giudice; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 INSERT INTO public.giudice VALUES ('prof.martini@unibo.it', 'Roberto', 'Martini', true);
@@ -687,20 +635,20 @@ INSERT INTO public.giudice VALUES ('ing.rinaldi@unifi.it', 'Paola', 'Rinaldi', t
 --
 -- TOC entry 3451 (class 0 OID 16995)
 -- Dependencies: 219
--- Data for Name: hackathon; Type: TABLE DATA; Schema: public; Owner: myuser
+-- Data for Name: hackathon; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 INSERT INTO public.hackathon VALUES (1, 'AI for Good', 'Milano', '2024-03-15', '2024-03-17', 60, 12, 'Hackathon dedicato alle applicazioni di intelligenza artificiale per il bene sociale', true, '2024-03-10', 'marco.rossi@techevents.it');
 INSERT INTO public.hackathon VALUES (2, 'Green Tech Challenge', 'Roma', '2024-04-20', '2024-04-22', 80, 16, 'Sviluppo di soluzioni tecnologiche per la sostenibilità ambientale', true, '2024-04-15', 'giulia.ferrari@innovazione.it');
-INSERT INTO public.hackathon VALUES (3, 'FinTech Innovation', 'Torino', '2024-05-10', '2024-05-12', 40, 8, 'Innovazione nel settore finanziario e dei pagamenti digitali', false, '2024-05-05', 'andrea.bianchi@startup.it');
 INSERT INTO public.hackathon VALUES (4, 'Healthcare Tech', 'Firenze', '2024-06-01', '2024-06-03', 50, 10, 'Tecnologie per migliorare il settore sanitario', true, '2024-05-25', 'francesca.verdi@digital.it');
 INSERT INTO public.hackathon VALUES (5, 'Smart City Solutions', 'Bologna', '2024-07-15', '2024-07-17', 70, 14, 'Soluzioni innovative per le città intelligenti', true, '2024-07-10', 'alessandro.neri@tech.it');
+INSERT INTO public.hackathon VALUES (3, 'FinTech Innovation', 'Torino', '2024-05-10', '2024-05-12', 40, 1, 'Innovazione nel settore finanziario e dei pagamenti digitali', false, '2024-05-05', 'andrea.bianchi@startup.it');
 
 
 --
 -- TOC entry 3453 (class 0 OID 17005)
 -- Dependencies: 221
--- Data for Name: invitogiudice; Type: TABLE DATA; Schema: public; Owner: myuser
+-- Data for Name: invitogiudice; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 INSERT INTO public.invitogiudice VALUES ('prof.martini@unibo.it', 1);
@@ -720,7 +668,7 @@ INSERT INTO public.invitogiudice VALUES ('dott.conti@polimi.it', 5);
 --
 -- TOC entry 3454 (class 0 OID 17008)
 -- Dependencies: 222
--- Data for Name: organizzatore; Type: TABLE DATA; Schema: public; Owner: myuser
+-- Data for Name: organizzatore; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 INSERT INTO public.organizzatore VALUES ('marco.rossi@techevents.it', 'Marco', 'Rossi', 8);
@@ -733,7 +681,7 @@ INSERT INTO public.organizzatore VALUES ('alessandro.neri@tech.it', 'Alessandro'
 --
 -- TOC entry 3455 (class 0 OID 17011)
 -- Dependencies: 223
--- Data for Name: partecipante; Type: TABLE DATA; Schema: public; Owner: myuser
+-- Data for Name: partecipante; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 INSERT INTO public.partecipante VALUES ('luca.monaco@gmail.com', 'Luca', 'Monaco', 'Developer');
@@ -771,7 +719,7 @@ INSERT INTO public.partecipante VALUES ('isabella.messina@gmail.com', 'Isabella'
 --
 -- TOC entry 3456 (class 0 OID 17014)
 -- Dependencies: 224
--- Data for Name: partecipante_team; Type: TABLE DATA; Schema: public; Owner: myuser
+-- Data for Name: partecipante_team; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 INSERT INTO public.partecipante_team VALUES ('luca.monaco@gmail.com', 'AIMinds');
@@ -809,7 +757,7 @@ INSERT INTO public.partecipante_team VALUES ('silvia.monti@gmail.com', 'UrbanTec
 --
 -- TOC entry 3457 (class 0 OID 17017)
 -- Dependencies: 225
--- Data for Name: registrazione; Type: TABLE DATA; Schema: public; Owner: myuser
+-- Data for Name: registrazione; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 INSERT INTO public.registrazione VALUES ('luca.monaco@gmail.com', 1);
@@ -847,7 +795,7 @@ INSERT INTO public.registrazione VALUES ('isabella.messina@gmail.com', 3);
 --
 -- TOC entry 3458 (class 0 OID 17020)
 -- Dependencies: 226
--- Data for Name: team; Type: TABLE DATA; Schema: public; Owner: myuser
+-- Data for Name: team; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 INSERT INTO public.team VALUES ('AIMinds', 1);
@@ -867,7 +815,7 @@ INSERT INTO public.team VALUES ('UrbanTech', 5);
 --
 -- TOC entry 3459 (class 0 OID 17023)
 -- Dependencies: 227
--- Data for Name: voto; Type: TABLE DATA; Schema: public; Owner: myuser
+-- Data for Name: voto; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 INSERT INTO public.voto VALUES ('prof.martini@unibo.it', 'AIMinds', 8);
@@ -897,7 +845,7 @@ INSERT INTO public.voto VALUES ('prof.bruno@unige.it', 'CryptoBuilders', 8);
 --
 -- TOC entry 3469 (class 0 OID 0)
 -- Dependencies: 217
--- Name: documento_id_doc_seq; Type: SEQUENCE SET; Schema: public; Owner: myuser
+-- Name: documento_id_doc_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.documento_id_doc_seq', 14, true);
@@ -906,7 +854,7 @@ SELECT pg_catalog.setval('public.documento_id_doc_seq', 14, true);
 --
 -- TOC entry 3470 (class 0 OID 0)
 -- Dependencies: 220
--- Name: hackathon_id_hackathon_seq; Type: SEQUENCE SET; Schema: public; Owner: myuser
+-- Name: hackathon_id_hackathon_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.hackathon_id_hackathon_seq', 5, true);
@@ -914,7 +862,7 @@ SELECT pg_catalog.setval('public.hackathon_id_hackathon_seq', 5, true);
 
 --
 -- TOC entry 3265 (class 2606 OID 17030)
--- Name: commento commento_pkey; Type: CONSTRAINT; Schema: public; Owner: myuser
+-- Name: commento commento_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.commento
@@ -923,7 +871,7 @@ ALTER TABLE ONLY public.commento
 
 --
 -- TOC entry 3267 (class 2606 OID 17032)
--- Name: documento documento_pkey; Type: CONSTRAINT; Schema: public; Owner: myuser
+-- Name: documento documento_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.documento
@@ -932,7 +880,7 @@ ALTER TABLE ONLY public.documento
 
 --
 -- TOC entry 3269 (class 2606 OID 17034)
--- Name: giudice giudice_pkey; Type: CONSTRAINT; Schema: public; Owner: myuser
+-- Name: giudice giudice_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.giudice
@@ -941,7 +889,7 @@ ALTER TABLE ONLY public.giudice
 
 --
 -- TOC entry 3271 (class 2606 OID 17036)
--- Name: hackathon hackathon_pkey; Type: CONSTRAINT; Schema: public; Owner: myuser
+-- Name: hackathon hackathon_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.hackathon
@@ -950,7 +898,7 @@ ALTER TABLE ONLY public.hackathon
 
 --
 -- TOC entry 3273 (class 2606 OID 17038)
--- Name: invitogiudice invitogiudice_pkey; Type: CONSTRAINT; Schema: public; Owner: myuser
+-- Name: invitogiudice invitogiudice_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.invitogiudice
@@ -959,7 +907,7 @@ ALTER TABLE ONLY public.invitogiudice
 
 --
 -- TOC entry 3275 (class 2606 OID 17040)
--- Name: organizzatore organizzatore_pkey; Type: CONSTRAINT; Schema: public; Owner: myuser
+-- Name: organizzatore organizzatore_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.organizzatore
@@ -968,7 +916,7 @@ ALTER TABLE ONLY public.organizzatore
 
 --
 -- TOC entry 3277 (class 2606 OID 17042)
--- Name: partecipante partecipante_pkey; Type: CONSTRAINT; Schema: public; Owner: myuser
+-- Name: partecipante partecipante_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.partecipante
@@ -977,7 +925,7 @@ ALTER TABLE ONLY public.partecipante
 
 --
 -- TOC entry 3279 (class 2606 OID 17044)
--- Name: partecipante_team partecipante_team_pkey; Type: CONSTRAINT; Schema: public; Owner: myuser
+-- Name: partecipante_team partecipante_team_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.partecipante_team
@@ -986,7 +934,7 @@ ALTER TABLE ONLY public.partecipante_team
 
 --
 -- TOC entry 3281 (class 2606 OID 17046)
--- Name: registrazione registrazione_pkey; Type: CONSTRAINT; Schema: public; Owner: myuser
+-- Name: registrazione registrazione_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.registrazione
@@ -995,7 +943,7 @@ ALTER TABLE ONLY public.registrazione
 
 --
 -- TOC entry 3283 (class 2606 OID 17048)
--- Name: team team_pkey; Type: CONSTRAINT; Schema: public; Owner: myuser
+-- Name: team team_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.team
@@ -1004,7 +952,7 @@ ALTER TABLE ONLY public.team
 
 --
 -- TOC entry 3285 (class 2606 OID 17050)
--- Name: voto voto_pkey; Type: CONSTRAINT; Schema: public; Owner: myuser
+-- Name: voto voto_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.voto
@@ -1013,7 +961,7 @@ ALTER TABLE ONLY public.voto
 
 --
 -- TOC entry 3297 (class 2620 OID 17112)
--- Name: documento trg_check_data_caricamento; Type: TRIGGER; Schema: public; Owner: myuser
+-- Name: documento trg_check_data_caricamento; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER trg_check_data_caricamento BEFORE INSERT OR UPDATE ON public.documento FOR EACH ROW EXECUTE FUNCTION public.check_data_caricamento_documento();
@@ -1021,7 +969,7 @@ CREATE TRIGGER trg_check_data_caricamento BEFORE INSERT OR UPDATE ON public.docu
 
 --
 -- TOC entry 3301 (class 2620 OID 17051)
--- Name: registrazione trg_check_hackathon_overlap; Type: TRIGGER; Schema: public; Owner: myuser
+-- Name: registrazione trg_check_hackathon_overlap; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER trg_check_hackathon_overlap BEFORE INSERT OR UPDATE ON public.registrazione FOR EACH ROW EXECUTE FUNCTION public.check_hackathon_overlap();
@@ -1029,7 +977,7 @@ CREATE TRIGGER trg_check_hackathon_overlap BEFORE INSERT OR UPDATE ON public.reg
 
 --
 -- TOC entry 3302 (class 2620 OID 17052)
--- Name: registrazione trg_check_max_partecipanti; Type: TRIGGER; Schema: public; Owner: myuser
+-- Name: registrazione trg_check_max_partecipanti; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER trg_check_max_partecipanti BEFORE INSERT ON public.registrazione FOR EACH ROW EXECUTE FUNCTION public.check_max_partecipanti();
@@ -1037,7 +985,7 @@ CREATE TRIGGER trg_check_max_partecipanti BEFORE INSERT ON public.registrazione 
 
 --
 -- TOC entry 3299 (class 2620 OID 17053)
--- Name: partecipante_team trg_check_max_partecipanti_per_team; Type: TRIGGER; Schema: public; Owner: myuser
+-- Name: partecipante_team trg_check_max_partecipanti_per_team; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER trg_check_max_partecipanti_per_team BEFORE INSERT ON public.partecipante_team FOR EACH ROW EXECUTE FUNCTION public.check_max_partecipanti_per_team();
@@ -1045,7 +993,7 @@ CREATE TRIGGER trg_check_max_partecipanti_per_team BEFORE INSERT ON public.parte
 
 --
 -- TOC entry 3303 (class 2620 OID 17054)
--- Name: team trg_check_max_team; Type: TRIGGER; Schema: public; Owner: myuser
+-- Name: team trg_check_max_team; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER trg_check_max_team BEFORE INSERT ON public.team FOR EACH ROW EXECUTE FUNCTION public.check_max_team();
@@ -1053,7 +1001,7 @@ CREATE TRIGGER trg_check_max_team BEFORE INSERT ON public.team FOR EACH ROW EXEC
 
 --
 -- TOC entry 3300 (class 2620 OID 17055)
--- Name: partecipante_team trg_check_unique_participant; Type: TRIGGER; Schema: public; Owner: myuser
+-- Name: partecipante_team trg_check_unique_participant; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER trg_check_unique_participant BEFORE INSERT ON public.partecipante_team FOR EACH ROW EXECUTE FUNCTION public.check_unique_participant_per_hackathon();
@@ -1061,7 +1009,7 @@ CREATE TRIGGER trg_check_unique_participant BEFORE INSERT ON public.partecipante
 
 --
 -- TOC entry 3298 (class 2620 OID 17111)
--- Name: documento trigger_data_caricamento; Type: TRIGGER; Schema: public; Owner: myuser
+-- Name: documento trigger_data_caricamento; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER trigger_data_caricamento BEFORE INSERT OR UPDATE ON public.documento FOR EACH ROW EXECUTE FUNCTION public.check_data_caricamento();
@@ -1069,7 +1017,7 @@ CREATE TRIGGER trigger_data_caricamento BEFORE INSERT OR UPDATE ON public.docume
 
 --
 -- TOC entry 3286 (class 2606 OID 17056)
--- Name: commento fk_commento_doc; Type: FK CONSTRAINT; Schema: public; Owner: myuser
+-- Name: commento fk_commento_doc; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.commento
@@ -1078,7 +1026,7 @@ ALTER TABLE ONLY public.commento
 
 --
 -- TOC entry 3287 (class 2606 OID 17061)
--- Name: commento fk_commento_giudice; Type: FK CONSTRAINT; Schema: public; Owner: myuser
+-- Name: commento fk_commento_giudice; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.commento
@@ -1087,7 +1035,7 @@ ALTER TABLE ONLY public.commento
 
 --
 -- TOC entry 3295 (class 2606 OID 17066)
--- Name: team fk_hackathon_team; Type: FK CONSTRAINT; Schema: public; Owner: myuser
+-- Name: team fk_hackathon_team; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.team
@@ -1096,7 +1044,7 @@ ALTER TABLE ONLY public.team
 
 --
 -- TOC entry 3290 (class 2606 OID 17071)
--- Name: invitogiudice fk_invito_hack; Type: FK CONSTRAINT; Schema: public; Owner: myuser
+-- Name: invitogiudice fk_invito_hack; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.invitogiudice
@@ -1105,7 +1053,7 @@ ALTER TABLE ONLY public.invitogiudice
 
 --
 -- TOC entry 3289 (class 2606 OID 17076)
--- Name: hackathon fk_organizzatore; Type: FK CONSTRAINT; Schema: public; Owner: myuser
+-- Name: hackathon fk_organizzatore; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.hackathon
@@ -1114,7 +1062,7 @@ ALTER TABLE ONLY public.hackathon
 
 --
 -- TOC entry 3291 (class 2606 OID 17081)
--- Name: partecipante_team fk_partecipante; Type: FK CONSTRAINT; Schema: public; Owner: myuser
+-- Name: partecipante_team fk_partecipante; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.partecipante_team
@@ -1123,7 +1071,7 @@ ALTER TABLE ONLY public.partecipante_team
 
 --
 -- TOC entry 3293 (class 2606 OID 17086)
--- Name: registrazione fk_registrazione_hack; Type: FK CONSTRAINT; Schema: public; Owner: myuser
+-- Name: registrazione fk_registrazione_hack; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.registrazione
@@ -1132,7 +1080,7 @@ ALTER TABLE ONLY public.registrazione
 
 --
 -- TOC entry 3294 (class 2606 OID 17091)
--- Name: registrazione fk_registrazione_part; Type: FK CONSTRAINT; Schema: public; Owner: myuser
+-- Name: registrazione fk_registrazione_part; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.registrazione
@@ -1141,7 +1089,7 @@ ALTER TABLE ONLY public.registrazione
 
 --
 -- TOC entry 3292 (class 2606 OID 17096)
--- Name: partecipante_team fk_team; Type: FK CONSTRAINT; Schema: public; Owner: myuser
+-- Name: partecipante_team fk_team; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.partecipante_team
@@ -1150,7 +1098,7 @@ ALTER TABLE ONLY public.partecipante_team
 
 --
 -- TOC entry 3288 (class 2606 OID 17101)
--- Name: documento fk_team_doc; Type: FK CONSTRAINT; Schema: public; Owner: myuser
+-- Name: documento fk_team_doc; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.documento
@@ -1159,7 +1107,7 @@ ALTER TABLE ONLY public.documento
 
 --
 -- TOC entry 3296 (class 2606 OID 17106)
--- Name: voto fk_voto_team; Type: FK CONSTRAINT; Schema: public; Owner: myuser
+-- Name: voto fk_voto_team; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.voto
@@ -1169,13 +1117,13 @@ ALTER TABLE ONLY public.voto
 --
 -- TOC entry 3466 (class 0 OID 0)
 -- Dependencies: 5
--- Name: SCHEMA public; Type: ACL; Schema: -; Owner: pg_database_owner
+-- Name: SCHEMA public; Type: ACL; Schema: -; Owner: -
 --
 
 REVOKE USAGE ON SCHEMA public FROM PUBLIC;
 
 
--- Completed on 2025-07-16 13:04:42 UTC
+-- Completed on 2025-07-16 13:27:05 UTC
 
 --
 -- PostgreSQL database dump complete
