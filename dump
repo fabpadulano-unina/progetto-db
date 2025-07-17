@@ -5,7 +5,7 @@
 -- Dumped from database version 16.9 (Debian 16.9-1.pgdg120+1)
 -- Dumped by pg_dump version 16.9
 
--- Started on 2025-07-16 13:27:05 UTC
+-- Started on 2025-07-17 10:15:07 UTC
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -19,28 +19,28 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- TOC entry 5 (class 2615 OID 16967)
--- Name: public; Type: SCHEMA; Schema: -; Owner: -
+-- TOC entry 5 (class 2615 OID 2200)
+-- Name: hackathon-schema; Type: SCHEMA; Schema: -; Owner: -
 --
 
-CREATE SCHEMA public;
+CREATE SCHEMA "hackathon-schema";
 
 
 --
--- TOC entry 3465 (class 0 OID 0)
+-- TOC entry 3472 (class 0 OID 0)
 -- Dependencies: 5
--- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
+-- Name: SCHEMA "hackathon-schema"; Type: COMMENT; Schema: -; Owner: -
 --
 
-COMMENT ON SCHEMA public IS 'standard public schema';
+COMMENT ON SCHEMA "hackathon-schema" IS 'standard public schema';
 
 
 --
--- TOC entry 228 (class 1255 OID 16968)
--- Name: check_data_caricamento(); Type: FUNCTION; Schema: public; Owner: -
+-- TOC entry 230 (class 1255 OID 17382)
+-- Name: check_data_caricamento_documento(); Type: FUNCTION; Schema: hackathon-schema; Owner: -
 --
 
-CREATE FUNCTION public.check_data_caricamento() RETURNS trigger
+CREATE FUNCTION "hackathon-schema".check_data_caricamento_documento() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -49,13 +49,12 @@ DECLARE
 BEGIN
     SELECT H.Data_inizio, H.Data_fine
     INTO data_inizio, data_fine
-    FROM Team T
-    JOIN Hackathon H ON T.ID_hackathon = H.ID_hackathon
-    WHERE T.Nome_team = NEW.Nome_team;
+    FROM Hackathon H
+    WHERE h.ID_hackathon = NEW.ID_hackathon;
 
     IF NEW.DataCaricamento < data_inizio OR NEW.DataCaricamento > data_fine THEN
-        RAISE EXCEPTION 'La data di caricamento del documento
-        non è compresa tra le date dell''hackathon';
+        RAISE EXCEPTION 'La data di caricamento non è compresa tra la data di inizio 
+        e quella di fine dell’hackathon.';
     END IF;
 
     RETURN NEW;
@@ -64,95 +63,63 @@ $$;
 
 
 --
--- TOC entry 229 (class 1255 OID 16969)
--- Name: check_data_caricamento_documento(); Type: FUNCTION; Schema: public; Owner: -
+-- TOC entry 236 (class 1255 OID 17259)
+-- Name: check_hackathon_overlap(); Type: FUNCTION; Schema: hackathon-schema; Owner: -
 --
 
-CREATE FUNCTION public.check_data_caricamento_documento() RETURNS trigger
+CREATE FUNCTION "hackathon-schema".check_hackathon_overlap() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+IF EXISTS (
+SELECT 1
+FROM Registrazione R
+JOIN Hackathon H1 ON R.ID_hackathon = H1.ID_hackathon
+JOIN Hackathon H2 ON H2.ID_hackathon = NEW.ID_hackathon
+WHERE R.Email_partecipante = NEW.Email_partecipante
+AND R.ID_hackathon <> NEW.ID_hackathon
+AND H1.Data_inizio <= H2.Data_fine
+AND H2.Data_inizio <= H1.Data_fine
+) THEN
+RAISE EXCEPTION 'Non è possibile iscriversi a due hackathon con date sovrapposte.';
+END IF;
+RETURN NEW;
+END;
+$$;
+
+
+--
+-- TOC entry 235 (class 1255 OID 17255)
+-- Name: check_max_partecipanti(); Type: FUNCTION; Schema: hackathon-schema; Owner: -
+--
+
+CREATE FUNCTION "hackathon-schema".check_max_partecipanti() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 DECLARE
-    data_inizio DATE;
-    data_fine DATE;
+partecipanti_attuali INTEGER;
+max_partecipanti INTEGER;
 BEGIN
-    SELECT H.Data_inizio, H.Data_fine
-    INTO data_inizio, data_fine
-    FROM Team T
-    JOIN Hackathon H ON T.ID_hackathon = H.ID_hackathon
-    WHERE T.Nome_team = NEW.Nome_team;
-
-    IF NEW.DataCaricamento < data_inizio OR NEW.DataCaricamento > data_fine THEN
-        RAISE EXCEPTION 'La data di caricamento (%) non è compresa tra % e %',
-        NEW.DataCaricamento, data_inizio, data_fine;
-    END IF;
-
-    RETURN NEW;
+SELECT COUNT(*) INTO partecipanti_attuali
+FROM Registrazione
+WHERE ID_hackathon = NEW.ID_hackathon;
+SELECT Num_max_partecipanti INTO max_partecipanti
+FROM Hackathon
+WHERE ID_hackathon = NEW.ID_hackathon;
+IF partecipanti_attuali >= max_partecipanti THEN
+RAISE EXCEPTION 'Numero massimo di partecipanti per questo hackathon già raggiunto.';
+END IF;
+RETURN NEW;
 END;
 $$;
 
 
 --
--- TOC entry 230 (class 1255 OID 16970)
--- Name: check_hackathon_overlap(); Type: FUNCTION; Schema: public; Owner: -
+-- TOC entry 229 (class 1255 OID 17271)
+-- Name: check_max_partecipanti_per_team(); Type: FUNCTION; Schema: hackathon-schema; Owner: -
 --
 
-CREATE FUNCTION public.check_hackathon_overlap() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    IF EXISTS (
-        SELECT 1
-        FROM Registrazione R
-        JOIN Hackathon H1 ON R.ID_hackathon = H1.ID_hackathon
-        JOIN Hackathon H2 ON H2.ID_hackathon = NEW.ID_hackathon
-        WHERE R.Email_partecipante = NEW.Email_partecipante
-          AND R.ID_hackathon <> NEW.ID_hackathon
-          AND H1.Data_inizio <= H2.Data_fine
-          AND H2.Data_inizio <= H1.Data_fine
-    ) THEN
-        RAISE EXCEPTION 'Non è possibile iscriversi a due hackathon con date sovrapposte.';
-    END IF;
-
-    RETURN NEW;
-END;
-$$;
-
-
---
--- TOC entry 231 (class 1255 OID 16971)
--- Name: check_max_partecipanti(); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.check_max_partecipanti() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-    partecipanti_attuali INTEGER;
-    max_partecipanti INTEGER;
-BEGIN
-    SELECT COUNT(*) INTO partecipanti_attuali
-    FROM Registrazione
-    WHERE ID_hackathon = NEW.ID_hackathon;
-
-    SELECT Num_max_partecipanti INTO max_partecipanti
-    FROM Hackathon
-    WHERE ID_hackathon = NEW.ID_hackathon;
-
-    IF partecipanti_attuali >= max_partecipanti THEN
-        RAISE EXCEPTION 'Numero massimo di partecipanti per questo hackathon già raggiunto.';
-    END IF;
-
-    RETURN NEW;
-END;
-$$;
-
-
---
--- TOC entry 232 (class 1255 OID 16972)
--- Name: check_max_partecipanti_per_team(); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.check_max_partecipanti_per_team() RETURNS trigger
+CREATE FUNCTION "hackathon-schema".check_max_partecipanti_per_team() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -164,13 +131,11 @@ BEGIN
     WHERE Nome_team = NEW.Nome_team;
 
     SELECT H.Num_max_team INTO max_per_team
-    FROM Team T
-    JOIN Hackathon H ON T.ID_hackathon = H.ID_hackathon
-    WHERE T.Nome_team = NEW.Nome_team;
+    FROM Hackathon H
+    WHERE id_hackathon = NEW.id_hackathon;
 
     IF partecipanti_correnti >= max_per_team THEN
-        RAISE EXCEPTION 'Il team % ha già raggiunto il numero massimo di partecipanti (%).'
-        , NEW.Nome_team, max_per_team;
+      RAISE EXCEPTION 'Il team % ha gi`a raggiunto il numero massimo di partecipanti (%).' , NEW.Nome_team, max_per_team;
     END IF;
 
     RETURN NEW;
@@ -179,53 +144,49 @@ $$;
 
 
 --
--- TOC entry 233 (class 1255 OID 16973)
--- Name: check_max_team(); Type: FUNCTION; Schema: public; Owner: -
+-- TOC entry 248 (class 1255 OID 17269)
+-- Name: check_max_team(); Type: FUNCTION; Schema: hackathon-schema; Owner: -
 --
 
-CREATE FUNCTION public.check_max_team() RETURNS trigger
+CREATE FUNCTION "hackathon-schema".check_max_team() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 DECLARE
-    team_correnti INTEGER;
-    max_team INTEGER;
+team_correnti INTEGER;
+max_team INTEGER;
 BEGIN
-    SELECT COUNT(*) INTO team_correnti
-    FROM Team
-    WHERE ID_hackathon = NEW.ID_hackathon;
-
-    SELECT Num_max_team INTO max_team
-    FROM Hackathon
-    WHERE ID_hackathon = NEW.ID_hackathon;
-
-    IF team_correnti >= max_team THEN
-        RAISE EXCEPTION 'Numero massimo di team per questo hackathon già raggiunto.';
-    END IF;
-
-    RETURN NEW;
+SELECT COUNT(*) INTO team_correnti
+FROM Team_Hackathon
+WHERE ID_hackathon = NEW.ID_hackathon;
+SELECT Num_max_team INTO max_team
+FROM Hackathon
+WHERE ID_hackathon = NEW.ID_hackathon;
+IF team_correnti >= max_team THEN
+RAISE EXCEPTION 'Numero massimo di team per questo hackathon già raggiunto.';
+END IF;
+RETURN NEW;
 END;
 $$;
 
 
 --
--- TOC entry 234 (class 1255 OID 16974)
--- Name: check_unique_participant_per_hackathon(); Type: FUNCTION; Schema: public; Owner: -
+-- TOC entry 234 (class 1255 OID 17250)
+-- Name: check_unique_partecipante_per_hackathon(); Type: FUNCTION; Schema: hackathon-schema; Owner: -
 --
 
-CREATE FUNCTION public.check_unique_participant_per_hackathon() RETURNS trigger
+CREATE FUNCTION "hackathon-schema".check_unique_partecipante_per_hackathon() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
-DECLARE
-    hackathon_id INT;
 BEGIN
-    SELECT id_hackathon INTO hackathon_id
-    FROM Team WHERE Nome_Team = NEW.Nome_Team;
-
     IF EXISTS (
-        SELECT 1 FROM Partecipante_Team PT
-        JOIN Team T ON PT.Nome_Team = T.Nome_Team
-        WHERE PT.Email_partecipante = NEW.Email_partecipante
-          AND T.id_hackathon = hackathon_id
+        SELECT 1 FROM Team_Hackathon th
+        WHERE th.nome_team=NEW.nome_team
+        AND th.id_hackathon in (
+            SELECT th2.id_hackathon 
+            FROM Team_Hackathon th2 NATURAL JOIN Partecipante_Team pt
+            WHERE pt.email_partecipante = NEW.email_partecipante
+            AND th2.nome_team <> NEW.nome_team
+        )
     ) THEN
         RAISE EXCEPTION 'Il partecipante è già in un team per questo hackathon';
     END IF;
@@ -236,11 +197,11 @@ $$;
 
 
 --
--- TOC entry 235 (class 1255 OID 16975)
--- Name: chiudi_registrazioni_scadute(); Type: PROCEDURE; Schema: public; Owner: -
+-- TOC entry 233 (class 1255 OID 17563)
+-- Name: chiudi_registrazioni_scadute(); Type: PROCEDURE; Schema: hackathon-schema; Owner: -
 --
 
-CREATE PROCEDURE public.chiudi_registrazioni_scadute()
+CREATE PROCEDURE "hackathon-schema".chiudi_registrazioni_scadute()
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -253,11 +214,11 @@ $$;
 
 
 --
--- TOC entry 236 (class 1255 OID 16976)
--- Name: classifica_team(integer); Type: FUNCTION; Schema: public; Owner: -
+-- TOC entry 232 (class 1255 OID 17385)
+-- Name: classifica_team(integer); Type: FUNCTION; Schema: hackathon-schema; Owner: -
 --
 
-CREATE FUNCTION public.classifica_team(id_evento integer) RETURNS text
+CREATE FUNCTION "hackathon-schema".classifica_team(id_evento integer) RETURNS text
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -267,8 +228,7 @@ BEGIN
     FOR r IN (
         SELECT V.Nome_team, AVG(V.voto) AS media
         FROM Voto V
-        JOIN Team T ON V.Nome_team = T.Nome_team
-        WHERE T.ID_hackathon = id_evento
+        WHERE V.ID_hackathon = id_evento
         GROUP BY V.Nome_team
         ORDER BY media DESC
     )
@@ -283,11 +243,11 @@ $$;
 
 
 --
--- TOC entry 237 (class 1255 OID 16977)
--- Name: documenti_team(character varying); Type: FUNCTION; Schema: public; Owner: -
+-- TOC entry 250 (class 1255 OID 17403)
+-- Name: documenti_team(character varying, integer); Type: FUNCTION; Schema: hackathon-schema; Owner: -
 --
 
-CREATE FUNCTION public.documenti_team(nome_team character varying) RETURNS text
+CREATE FUNCTION "hackathon-schema".documenti_team(nome_team_in character varying, id_hackaton_in integer) RETURNS text
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -296,8 +256,8 @@ DECLARE
 BEGIN
     FOR doc IN (
         SELECT ID_doc
-        FROM Documento
-        WHERE Nome_team = nome_team
+        FROM Documento d
+        WHERE d.Nome_team = nome_team_in and d.id_hackathon = id_hackaton_in
         ORDER BY DataCaricamento
     )
     LOOP
@@ -311,50 +271,46 @@ $$;
 
 
 --
--- TOC entry 238 (class 1255 OID 16978)
--- Name: media_voti_team(text); Type: FUNCTION; Schema: public; Owner: -
+-- TOC entry 231 (class 1255 OID 17384)
+-- Name: media_voti_team(text, integer); Type: FUNCTION; Schema: hackathon-schema; Owner: -
 --
 
-CREATE FUNCTION public.media_voti_team(nome text) RETURNS numeric
+CREATE FUNCTION "hackathon-schema".media_voti_team(nome text, hackathon_id integer) RETURNS numeric
     LANGUAGE plpgsql
     AS $$
 DECLARE
-    media NUMERIC;
+media NUMERIC;
 BEGIN
-    SELECT AVG(voto) INTO media
-    FROM Voto
-    WHERE Nome_team = nome;
-
-    RETURN media;
+SELECT AVG(voto) INTO media
+FROM Voto
+WHERE Nome_team = nome AND ID_hackathon=hackathon_id;
+RETURN media;
 END;
 $$;
 
 
 --
--- TOC entry 239 (class 1255 OID 16979)
--- Name: partecipanti_hackathon(integer); Type: FUNCTION; Schema: public; Owner: -
+-- TOC entry 249 (class 1255 OID 17399)
+-- Name: partecipanti_hackathon(integer); Type: FUNCTION; Schema: hackathon-schema; Owner: -
 --
 
-CREATE FUNCTION public.partecipanti_hackathon(id_hackaton integer) RETURNS text
+CREATE FUNCTION "hackathon-schema".partecipanti_hackathon(id_evento integer) RETURNS text
     LANGUAGE plpgsql
     AS $$
 DECLARE
     s_out TEXT := '';
-    p RECORD;
+    part Partecipante%ROWTYPE;
 BEGIN
-    FOR p IN (
-        SELECT Nome, Cognome, Email
+    FOR part IN
+        SELECT P.*
         FROM Partecipante P
         JOIN Registrazione R ON P.Email = R.Email_partecipante
-        WHERE R.ID_hackathon = id_hackaton
-    )
+        WHERE R.ID_hackathon = id_evento
     LOOP
-        s_out := s_out || p.Nome || ' ' || p.Cognome || ' ' || p.Email || ', ';
+        s_out := s_out || part.Nome || ' ' || part.Cognome || ' ' || part.Email || ', ';
     END LOOP;
 
-    s_out := rtrim(s_out);
-    s_out := rtrim(s_out, ',');
-
+    s_out := RTRIM(s_out, ', ');
     RETURN s_out;
 END;
 $$;
@@ -365,11 +321,11 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
--- TOC entry 215 (class 1259 OID 16980)
--- Name: commento; Type: TABLE; Schema: public; Owner: -
+-- TOC entry 224 (class 1259 OID 17314)
+-- Name: commento; Type: TABLE; Schema: hackathon-schema; Owner: -
 --
 
-CREATE TABLE public.commento (
+CREATE TABLE "hackathon-schema".commento (
     email_giudice character varying(100) NOT NULL,
     id_doc integer NOT NULL,
     commento text NOT NULL
@@ -377,24 +333,25 @@ CREATE TABLE public.commento (
 
 
 --
--- TOC entry 216 (class 1259 OID 16985)
--- Name: documento; Type: TABLE; Schema: public; Owner: -
+-- TOC entry 228 (class 1259 OID 17365)
+-- Name: documento; Type: TABLE; Schema: hackathon-schema; Owner: -
 --
 
-CREATE TABLE public.documento (
+CREATE TABLE "hackathon-schema".documento (
     id_doc integer NOT NULL,
     descrizione text NOT NULL,
     datacaricamento date NOT NULL,
-    nome_team character varying(50) NOT NULL
+    nome_team character varying(50) NOT NULL,
+    id_hackathon integer NOT NULL
 );
 
 
 --
--- TOC entry 217 (class 1259 OID 16990)
--- Name: documento_id_doc_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- TOC entry 227 (class 1259 OID 17364)
+-- Name: documento_id_doc_seq; Type: SEQUENCE; Schema: hackathon-schema; Owner: -
 --
 
-CREATE SEQUENCE public.documento_id_doc_seq
+CREATE SEQUENCE "hackathon-schema".documento_id_doc_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -404,20 +361,20 @@ CREATE SEQUENCE public.documento_id_doc_seq
 
 
 --
--- TOC entry 3467 (class 0 OID 0)
--- Dependencies: 217
--- Name: documento_id_doc_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- TOC entry 3473 (class 0 OID 0)
+-- Dependencies: 227
+-- Name: documento_id_doc_seq; Type: SEQUENCE OWNED BY; Schema: hackathon-schema; Owner: -
 --
 
-ALTER SEQUENCE public.documento_id_doc_seq OWNED BY public.documento.id_doc;
+ALTER SEQUENCE "hackathon-schema".documento_id_doc_seq OWNED BY "hackathon-schema".documento.id_doc;
 
 
 --
--- TOC entry 218 (class 1259 OID 16991)
--- Name: giudice; Type: TABLE; Schema: public; Owner: -
+-- TOC entry 217 (class 1259 OID 17124)
+-- Name: giudice; Type: TABLE; Schema: hackathon-schema; Owner: -
 --
 
-CREATE TABLE public.giudice (
+CREATE TABLE "hackathon-schema".giudice (
     email character varying(100) NOT NULL,
     nome character varying(50) NOT NULL,
     cognome character varying(50) NOT NULL,
@@ -426,11 +383,11 @@ CREATE TABLE public.giudice (
 
 
 --
--- TOC entry 219 (class 1259 OID 16995)
--- Name: hackathon; Type: TABLE; Schema: public; Owner: -
+-- TOC entry 219 (class 1259 OID 17131)
+-- Name: hackathon; Type: TABLE; Schema: hackathon-schema; Owner: -
 --
 
-CREATE TABLE public.hackathon (
+CREATE TABLE "hackathon-schema".hackathon (
     id_hackathon integer NOT NULL,
     titolo character varying(100) NOT NULL,
     sede character varying(100) NOT NULL,
@@ -449,11 +406,11 @@ CREATE TABLE public.hackathon (
 
 
 --
--- TOC entry 220 (class 1259 OID 17004)
--- Name: hackathon_id_hackathon_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- TOC entry 218 (class 1259 OID 17130)
+-- Name: hackathon_id_hackathon_seq; Type: SEQUENCE; Schema: hackathon-schema; Owner: -
 --
 
-CREATE SEQUENCE public.hackathon_id_hackathon_seq
+CREATE SEQUENCE "hackathon-schema".hackathon_id_hackathon_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -463,44 +420,44 @@ CREATE SEQUENCE public.hackathon_id_hackathon_seq
 
 
 --
--- TOC entry 3468 (class 0 OID 0)
--- Dependencies: 220
--- Name: hackathon_id_hackathon_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- TOC entry 3474 (class 0 OID 0)
+-- Dependencies: 218
+-- Name: hackathon_id_hackathon_seq; Type: SEQUENCE OWNED BY; Schema: hackathon-schema; Owner: -
 --
 
-ALTER SEQUENCE public.hackathon_id_hackathon_seq OWNED BY public.hackathon.id_hackathon;
+ALTER SEQUENCE "hackathon-schema".hackathon_id_hackathon_seq OWNED BY "hackathon-schema".hackathon.id_hackathon;
 
 
 --
--- TOC entry 221 (class 1259 OID 17005)
--- Name: invitogiudice; Type: TABLE; Schema: public; Owner: -
+-- TOC entry 226 (class 1259 OID 17347)
+-- Name: invitogiudice; Type: TABLE; Schema: hackathon-schema; Owner: -
 --
 
-CREATE TABLE public.invitogiudice (
+CREATE TABLE "hackathon-schema".invitogiudice (
     email_giudice character varying(100) NOT NULL,
     id_hackathon integer NOT NULL
 );
 
 
 --
--- TOC entry 222 (class 1259 OID 17008)
--- Name: organizzatore; Type: TABLE; Schema: public; Owner: -
+-- TOC entry 216 (class 1259 OID 17119)
+-- Name: organizzatore; Type: TABLE; Schema: hackathon-schema; Owner: -
 --
 
-CREATE TABLE public.organizzatore (
+CREATE TABLE "hackathon-schema".organizzatore (
     email character varying(100) NOT NULL,
     nome character varying(50) NOT NULL,
     cognome character varying(50) NOT NULL,
-    "Max_Hackathon_Gestibili" integer NOT NULL
+    max_hackathon_gestibili integer NOT NULL
 );
 
 
 --
--- TOC entry 223 (class 1259 OID 17011)
--- Name: partecipante; Type: TABLE; Schema: public; Owner: -
+-- TOC entry 215 (class 1259 OID 17114)
+-- Name: partecipante; Type: TABLE; Schema: hackathon-schema; Owner: -
 --
 
-CREATE TABLE public.partecipante (
+CREATE TABLE "hackathon-schema".partecipante (
     email character varying(100) NOT NULL,
     nome character varying(50) NOT NULL,
     cognome character varying(50) NOT NULL,
@@ -509,621 +466,652 @@ CREATE TABLE public.partecipante (
 
 
 --
--- TOC entry 224 (class 1259 OID 17014)
--- Name: partecipante_team; Type: TABLE; Schema: public; Owner: -
+-- TOC entry 223 (class 1259 OID 17183)
+-- Name: partecipante_team; Type: TABLE; Schema: hackathon-schema; Owner: -
 --
 
-CREATE TABLE public.partecipante_team (
+CREATE TABLE "hackathon-schema".partecipante_team (
     email_partecipante character varying(100) NOT NULL,
     nome_team character varying(50) NOT NULL
 );
 
 
 --
--- TOC entry 225 (class 1259 OID 17017)
--- Name: registrazione; Type: TABLE; Schema: public; Owner: -
+-- TOC entry 222 (class 1259 OID 17168)
+-- Name: registrazione; Type: TABLE; Schema: hackathon-schema; Owner: -
 --
 
-CREATE TABLE public.registrazione (
+CREATE TABLE "hackathon-schema".registrazione (
     email_partecipante character varying(100) NOT NULL,
     id_hackathon integer NOT NULL
 );
 
 
 --
--- TOC entry 226 (class 1259 OID 17020)
--- Name: team; Type: TABLE; Schema: public; Owner: -
+-- TOC entry 220 (class 1259 OID 17148)
+-- Name: team; Type: TABLE; Schema: hackathon-schema; Owner: -
 --
 
-CREATE TABLE public.team (
+CREATE TABLE "hackathon-schema".team (
+    nome_team character varying(50) NOT NULL
+);
+
+
+--
+-- TOC entry 221 (class 1259 OID 17153)
+-- Name: team_hackathon; Type: TABLE; Schema: hackathon-schema; Owner: -
+--
+
+CREATE TABLE "hackathon-schema".team_hackathon (
     nome_team character varying(50) NOT NULL,
     id_hackathon integer NOT NULL
 );
 
 
 --
--- TOC entry 227 (class 1259 OID 17023)
--- Name: voto; Type: TABLE; Schema: public; Owner: -
+-- TOC entry 225 (class 1259 OID 17331)
+-- Name: voto; Type: TABLE; Schema: hackathon-schema; Owner: -
 --
 
-CREATE TABLE public.voto (
+CREATE TABLE "hackathon-schema".voto (
     email_giudice character varying(100) NOT NULL,
     nome_team character varying(50) NOT NULL,
+    id_hackathon integer NOT NULL,
     voto integer NOT NULL,
     CONSTRAINT chk_voto_range CHECK (((voto >= 0) AND (voto <= 10)))
 );
 
 
 --
--- TOC entry 3256 (class 2604 OID 17027)
--- Name: documento id_doc; Type: DEFAULT; Schema: public; Owner: -
+-- TOC entry 3262 (class 2604 OID 17368)
+-- Name: documento id_doc; Type: DEFAULT; Schema: hackathon-schema; Owner: -
 --
 
-ALTER TABLE ONLY public.documento ALTER COLUMN id_doc SET DEFAULT nextval('public.documento_id_doc_seq'::regclass);
-
-
---
--- TOC entry 3258 (class 2604 OID 17028)
--- Name: hackathon id_hackathon; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.hackathon ALTER COLUMN id_hackathon SET DEFAULT nextval('public.hackathon_id_hackathon_seq'::regclass);
+ALTER TABLE ONLY "hackathon-schema".documento ALTER COLUMN id_doc SET DEFAULT nextval('"hackathon-schema".documento_id_doc_seq'::regclass);
 
 
 --
--- TOC entry 3447 (class 0 OID 16980)
--- Dependencies: 215
--- Data for Name: commento; Type: TABLE DATA; Schema: public; Owner: -
+-- TOC entry 3260 (class 2604 OID 17134)
+-- Name: hackathon id_hackathon; Type: DEFAULT; Schema: hackathon-schema; Owner: -
 --
 
-INSERT INTO public.commento VALUES ('prof.martini@unibo.it', 1, 'Progetto molto interessante, l''approccio AI è innovativo');
-INSERT INTO public.commento VALUES ('dott.conti@polimi.it', 1, 'Buona implementazione ma manca validazione clinica');
-INSERT INTO public.commento VALUES ('ing.romano@sapienza.it', 2, 'Codice ben strutturato, documentazione chiara');
-INSERT INTO public.commento VALUES ('prof.martini@unibo.it', 3, 'Demo efficace, interfaccia utente intuitiva');
-INSERT INTO public.commento VALUES ('dott.conti@polimi.it', 4, 'API ben progettata, manca security assessment');
-INSERT INTO public.commento VALUES ('dott.esposito@unipi.it', 6, 'Soluzione sostenibile e scalabile');
-INSERT INTO public.commento VALUES ('prof.lombardi@unipd.it', 7, 'Algoritmo di ottimizzazione molto promettente');
-INSERT INTO public.commento VALUES ('dott.ricci@unimi.it', 8, 'Idea innovativa per la mobilità urbana');
-INSERT INTO public.commento VALUES ('ing.gallo@polito.it', 9, 'Implementazione blockchain solida');
-INSERT INTO public.commento VALUES ('prof.bruno@unige.it', 10, 'Sistema di trading ben progettato');
-INSERT INTO public.commento VALUES ('dott.costa@unitn.it', 11, 'App utile per il monitoraggio sanitario');
-INSERT INTO public.commento VALUES ('ing.rinaldi@unifi.it', 12, 'Piattaforma telemedicina ben realizzata');
-INSERT INTO public.commento VALUES ('prof.martini@unibo.it', 13, 'Soluzione efficace per il traffico urbano');
-INSERT INTO public.commento VALUES ('dott.conti@polimi.it', 14, 'App per partecipazione civica molto utile');
+ALTER TABLE ONLY "hackathon-schema".hackathon ALTER COLUMN id_hackathon SET DEFAULT nextval('"hackathon-schema".hackathon_id_hackathon_seq'::regclass);
 
 
 --
--- TOC entry 3448 (class 0 OID 16985)
--- Dependencies: 216
--- Data for Name: documento; Type: TABLE DATA; Schema: public; Owner: -
---
-
-INSERT INTO public.documento VALUES (1, 'Presentazione del progetto AI per diagnosi medica', '2024-03-16', 'AIMinds');
-INSERT INTO public.documento VALUES (2, 'Codice sorgente dell''applicazione', '2024-03-16', 'AIMinds');
-INSERT INTO public.documento VALUES (3, 'Demo video del sistema di riconoscimento', '2024-03-17', 'TechVision');
-INSERT INTO public.documento VALUES (4, 'Documentazione tecnica dell''API', '2024-03-17', 'TechVision');
-INSERT INTO public.documento VALUES (5, 'Prototipo dell''interfaccia utente', '2024-03-16', 'CodeCrafters');
-INSERT INTO public.documento VALUES (6, 'App per il monitoraggio dei consumi energetici', '2024-04-21', 'EcoInnovators');
-INSERT INTO public.documento VALUES (7, 'Sistema di ottimizzazione della raccolta rifiuti', '2024-04-21', 'GreenTech Warriors');
-INSERT INTO public.documento VALUES (8, 'Piattaforma per la condivisione di veicoli elettrici', '2024-04-22', 'SustainableCode');
-INSERT INTO public.documento VALUES (9, 'Wallet digitale con smart contracts', '2024-05-11', 'FinTech Pioneers');
-INSERT INTO public.documento VALUES (10, 'Sistema di trading automatizzato', '2024-05-11', 'CryptoBuilders');
-INSERT INTO public.documento VALUES (11, 'App per il monitoraggio della salute', '2024-06-02', 'HealthTech Heroes');
-INSERT INTO public.documento VALUES (12, 'Piattaforma di telemedicina', '2024-06-02', 'MedInnovators');
-INSERT INTO public.documento VALUES (13, 'Sistema di gestione del traffico urbano', '2024-07-16', 'SmartCity Builders');
-INSERT INTO public.documento VALUES (14, 'App per la partecipazione civica', '2024-07-16', 'UrbanTech');
-
-
---
--- TOC entry 3450 (class 0 OID 16991)
--- Dependencies: 218
--- Data for Name: giudice; Type: TABLE DATA; Schema: public; Owner: -
---
-
-INSERT INTO public.giudice VALUES ('prof.martini@unibo.it', 'Roberto', 'Martini', true);
-INSERT INTO public.giudice VALUES ('dott.conti@polimi.it', 'Elena', 'Conti', true);
-INSERT INTO public.giudice VALUES ('ing.romano@sapienza.it', 'Fabio', 'Romano', true);
-INSERT INTO public.giudice VALUES ('dott.esposito@unipi.it', 'Chiara', 'Esposito', true);
-INSERT INTO public.giudice VALUES ('prof.lombardi@unipd.it', 'Davide', 'Lombardi', true);
-INSERT INTO public.giudice VALUES ('dott.ricci@unimi.it', 'Silvia', 'Ricci', true);
-INSERT INTO public.giudice VALUES ('ing.gallo@polito.it', 'Matteo', 'Gallo', true);
-INSERT INTO public.giudice VALUES ('prof.bruno@unige.it', 'Valentina', 'Bruno', true);
-INSERT INTO public.giudice VALUES ('dott.costa@unitn.it', 'Lorenzo', 'Costa', false);
-INSERT INTO public.giudice VALUES ('ing.rinaldi@unifi.it', 'Paola', 'Rinaldi', true);
-
-
---
--- TOC entry 3451 (class 0 OID 16995)
--- Dependencies: 219
--- Data for Name: hackathon; Type: TABLE DATA; Schema: public; Owner: -
---
-
-INSERT INTO public.hackathon VALUES (1, 'AI for Good', 'Milano', '2024-03-15', '2024-03-17', 60, 12, 'Hackathon dedicato alle applicazioni di intelligenza artificiale per il bene sociale', true, '2024-03-10', 'marco.rossi@techevents.it');
-INSERT INTO public.hackathon VALUES (2, 'Green Tech Challenge', 'Roma', '2024-04-20', '2024-04-22', 80, 16, 'Sviluppo di soluzioni tecnologiche per la sostenibilità ambientale', true, '2024-04-15', 'giulia.ferrari@innovazione.it');
-INSERT INTO public.hackathon VALUES (4, 'Healthcare Tech', 'Firenze', '2024-06-01', '2024-06-03', 50, 10, 'Tecnologie per migliorare il settore sanitario', true, '2024-05-25', 'francesca.verdi@digital.it');
-INSERT INTO public.hackathon VALUES (5, 'Smart City Solutions', 'Bologna', '2024-07-15', '2024-07-17', 70, 14, 'Soluzioni innovative per le città intelligenti', true, '2024-07-10', 'alessandro.neri@tech.it');
-INSERT INTO public.hackathon VALUES (3, 'FinTech Innovation', 'Torino', '2024-05-10', '2024-05-12', 40, 1, 'Innovazione nel settore finanziario e dei pagamenti digitali', false, '2024-05-05', 'andrea.bianchi@startup.it');
-
-
---
--- TOC entry 3453 (class 0 OID 17005)
--- Dependencies: 221
--- Data for Name: invitogiudice; Type: TABLE DATA; Schema: public; Owner: -
---
-
-INSERT INTO public.invitogiudice VALUES ('prof.martini@unibo.it', 1);
-INSERT INTO public.invitogiudice VALUES ('dott.conti@polimi.it', 1);
-INSERT INTO public.invitogiudice VALUES ('ing.romano@sapienza.it', 1);
-INSERT INTO public.invitogiudice VALUES ('dott.esposito@unipi.it', 2);
-INSERT INTO public.invitogiudice VALUES ('prof.lombardi@unipd.it', 2);
-INSERT INTO public.invitogiudice VALUES ('dott.ricci@unimi.it', 2);
-INSERT INTO public.invitogiudice VALUES ('ing.gallo@polito.it', 3);
-INSERT INTO public.invitogiudice VALUES ('prof.bruno@unige.it', 3);
-INSERT INTO public.invitogiudice VALUES ('dott.costa@unitn.it', 4);
-INSERT INTO public.invitogiudice VALUES ('ing.rinaldi@unifi.it', 4);
-INSERT INTO public.invitogiudice VALUES ('prof.martini@unibo.it', 5);
-INSERT INTO public.invitogiudice VALUES ('dott.conti@polimi.it', 5);
-
-
---
--- TOC entry 3454 (class 0 OID 17008)
--- Dependencies: 222
--- Data for Name: organizzatore; Type: TABLE DATA; Schema: public; Owner: -
---
-
-INSERT INTO public.organizzatore VALUES ('marco.rossi@techevents.it', 'Marco', 'Rossi', 8);
-INSERT INTO public.organizzatore VALUES ('giulia.ferrari@innovazione.it', 'Giulia', 'Ferrari', 6);
-INSERT INTO public.organizzatore VALUES ('andrea.bianchi@startup.it', 'Andrea', 'Bianchi', 10);
-INSERT INTO public.organizzatore VALUES ('francesca.verdi@digital.it', 'Francesca', 'Verdi', 5);
-INSERT INTO public.organizzatore VALUES ('alessandro.neri@tech.it', 'Alessandro', 'Neri', 7);
-
-
---
--- TOC entry 3455 (class 0 OID 17011)
--- Dependencies: 223
--- Data for Name: partecipante; Type: TABLE DATA; Schema: public; Owner: -
---
-
-INSERT INTO public.partecipante VALUES ('luca.monaco@gmail.com', 'Luca', 'Monaco', 'Developer');
-INSERT INTO public.partecipante VALUES ('sara.pellegrini@gmail.com', 'Sara', 'Pellegrini', 'Designer');
-INSERT INTO public.partecipante VALUES ('davide.santoro@gmail.com', 'Davide', 'Santoro', 'Team Leader');
-INSERT INTO public.partecipante VALUES ('elena.moretti@gmail.com', 'Elena', 'Moretti', 'Data Scientist');
-INSERT INTO public.partecipante VALUES ('matteo.barbieri@gmail.com', 'Matteo', 'Barbieri', 'Frontend Developer');
-INSERT INTO public.partecipante VALUES ('chiara.fabbri@gmail.com', 'Chiara', 'Fabbri', 'Backend Developer');
-INSERT INTO public.partecipante VALUES ('antonio.marini@gmail.com', 'Antonio', 'Marini', 'DevOps');
-INSERT INTO public.partecipante VALUES ('federica.tosi@gmail.com', 'Federica', 'Tosi', 'UX Designer');
-INSERT INTO public.partecipante VALUES ('simone.gentili@gmail.com', 'Simone', 'Gentili', 'Full Stack Developer');
-INSERT INTO public.partecipante VALUES ('valentina.caruso@gmail.com', 'Valentina', 'Caruso', 'Project Manager');
-INSERT INTO public.partecipante VALUES ('francesco.leone@gmail.com', 'Francesco', 'Leone', 'Machine Learning Engineer');
-INSERT INTO public.partecipante VALUES ('giorgia.longo@gmail.com', 'Giorgia', 'Longo', 'Business Analyst');
-INSERT INTO public.partecipante VALUES ('andrea.amato@gmail.com', 'Andrea', 'Amato', 'Mobile Developer');
-INSERT INTO public.partecipante VALUES ('martina.greco@gmail.com', 'Martina', 'Greco', 'QA Engineer');
-INSERT INTO public.partecipante VALUES ('roberto.orlando@gmail.com', 'Roberto', 'Orlando', 'System Architect');
-INSERT INTO public.partecipante VALUES ('alessia.fontana@gmail.com', 'Alessia', 'Fontana', 'Product Manager');
-INSERT INTO public.partecipante VALUES ('michele.serra@gmail.com', 'Michele', 'Serra', 'Security Expert');
-INSERT INTO public.partecipante VALUES ('laura.cattaneo@gmail.com', 'Laura', 'Cattaneo', 'Data Analyst');
-INSERT INTO public.partecipante VALUES ('giovanni.ferraro@gmail.com', 'Giovanni', 'Ferraro', 'Cloud Engineer');
-INSERT INTO public.partecipante VALUES ('elisa.mazza@gmail.com', 'Elisa', 'Mazza', 'UI Designer');
-INSERT INTO public.partecipante VALUES ('stefano.villa@gmail.com', 'Stefano', 'Villa', 'Database Administrator');
-INSERT INTO public.partecipante VALUES ('anna.sanna@gmail.com', 'Anna', 'Sanna', 'Scrum Master');
-INSERT INTO public.partecipante VALUES ('marco.riva@gmail.com', 'Marco', 'Riva', 'Blockchain Developer');
-INSERT INTO public.partecipante VALUES ('silvia.monti@gmail.com', 'Silvia', 'Monti', 'AI Specialist');
-INSERT INTO public.partecipante VALUES ('fabio.battaglia@gmail.com', 'Fabio', 'Battaglia', 'Network Engineer');
-INSERT INTO public.partecipante VALUES ('paola.palmieri@gmail.com', 'Paola', 'Palmieri', 'Marketing Specialist');
-INSERT INTO public.partecipante VALUES ('daniele.benedetti@gmail.com', 'Daniele', 'Benedetti', 'Growth Hacker');
-INSERT INTO public.partecipante VALUES ('sofia.caputo@gmail.com', 'Sofia', 'Caputo', 'Content Creator');
-INSERT INTO public.partecipante VALUES ('lorenzo.pagano@gmail.com', 'Lorenzo', 'Pagano', 'Tech Lead');
-INSERT INTO public.partecipante VALUES ('isabella.messina@gmail.com', 'Isabella', 'Messina', 'Research Scientist');
-
-
---
--- TOC entry 3456 (class 0 OID 17014)
+-- TOC entry 3462 (class 0 OID 17314)
 -- Dependencies: 224
--- Data for Name: partecipante_team; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: commento; Type: TABLE DATA; Schema: hackathon-schema; Owner: -
 --
 
-INSERT INTO public.partecipante_team VALUES ('luca.monaco@gmail.com', 'AIMinds');
-INSERT INTO public.partecipante_team VALUES ('sara.pellegrini@gmail.com', 'AIMinds');
-INSERT INTO public.partecipante_team VALUES ('davide.santoro@gmail.com', 'TechVision');
-INSERT INTO public.partecipante_team VALUES ('elena.moretti@gmail.com', 'TechVision');
-INSERT INTO public.partecipante_team VALUES ('matteo.barbieri@gmail.com', 'CodeCrafters');
-INSERT INTO public.partecipante_team VALUES ('chiara.fabbri@gmail.com', 'CodeCrafters');
-INSERT INTO public.partecipante_team VALUES ('fabio.battaglia@gmail.com', 'CodeCrafters');
-INSERT INTO public.partecipante_team VALUES ('paola.palmieri@gmail.com', 'AIMinds');
-INSERT INTO public.partecipante_team VALUES ('antonio.marini@gmail.com', 'EcoInnovators');
-INSERT INTO public.partecipante_team VALUES ('federica.tosi@gmail.com', 'EcoInnovators');
-INSERT INTO public.partecipante_team VALUES ('simone.gentili@gmail.com', 'GreenTech Warriors');
-INSERT INTO public.partecipante_team VALUES ('valentina.caruso@gmail.com', 'GreenTech Warriors');
-INSERT INTO public.partecipante_team VALUES ('francesco.leone@gmail.com', 'SustainableCode');
-INSERT INTO public.partecipante_team VALUES ('giorgia.longo@gmail.com', 'SustainableCode');
-INSERT INTO public.partecipante_team VALUES ('daniele.benedetti@gmail.com', 'EcoInnovators');
-INSERT INTO public.partecipante_team VALUES ('sofia.caputo@gmail.com', 'GreenTech Warriors');
-INSERT INTO public.partecipante_team VALUES ('andrea.amato@gmail.com', 'FinTech Pioneers');
-INSERT INTO public.partecipante_team VALUES ('martina.greco@gmail.com', 'FinTech Pioneers');
-INSERT INTO public.partecipante_team VALUES ('roberto.orlando@gmail.com', 'CryptoBuilders');
-INSERT INTO public.partecipante_team VALUES ('alessia.fontana@gmail.com', 'CryptoBuilders');
-INSERT INTO public.partecipante_team VALUES ('lorenzo.pagano@gmail.com', 'FinTech Pioneers');
-INSERT INTO public.partecipante_team VALUES ('isabella.messina@gmail.com', 'CryptoBuilders');
-INSERT INTO public.partecipante_team VALUES ('michele.serra@gmail.com', 'HealthTech Heroes');
-INSERT INTO public.partecipante_team VALUES ('laura.cattaneo@gmail.com', 'HealthTech Heroes');
-INSERT INTO public.partecipante_team VALUES ('giovanni.ferraro@gmail.com', 'MedInnovators');
-INSERT INTO public.partecipante_team VALUES ('elisa.mazza@gmail.com', 'MedInnovators');
-INSERT INTO public.partecipante_team VALUES ('stefano.villa@gmail.com', 'SmartCity Builders');
-INSERT INTO public.partecipante_team VALUES ('anna.sanna@gmail.com', 'SmartCity Builders');
-INSERT INTO public.partecipante_team VALUES ('marco.riva@gmail.com', 'UrbanTech');
-INSERT INTO public.partecipante_team VALUES ('silvia.monti@gmail.com', 'UrbanTech');
+INSERT INTO "hackathon-schema".commento VALUES ('giudice1@tech.it', 1, 'Ottima presentazione, idea innovativa e ben strutturata');
+INSERT INTO "hackathon-schema".commento VALUES ('giudice2@innovation.it', 1, 'Buona analisi di mercato, manca dettaglio tecnico');
+INSERT INTO "hackathon-schema".commento VALUES ('giudice1@tech.it', 2, 'Documentazione API completa e ben organizzata');
+INSERT INTO "hackathon-schema".commento VALUES ('giudice2@innovation.it', 2, 'Implementazione solida, ottimo lavoro di squadra');
+INSERT INTO "hackathon-schema".commento VALUES ('giudice3@startup.it', 3, 'Business plan convincente, proiezioni realistiche');
+INSERT INTO "hackathon-schema".commento VALUES ('giudice4@digital.it', 3, 'Strategia di marketing ben definita');
+INSERT INTO "hackathon-schema".commento VALUES ('giudice3@startup.it', 4, 'Prototipo funzionale, UI intuitiva');
+INSERT INTO "hackathon-schema".commento VALUES ('giudice4@digital.it', 4, 'Buone performance, codice pulito');
+INSERT INTO "hackathon-schema".commento VALUES ('giudice5@code.it', 5, 'Soluzione IoT interessante e scalabile');
+INSERT INTO "hackathon-schema".commento VALUES ('giudice6@tech.it', 5, 'Integrazione sensori ben realizzata');
+INSERT INTO "hackathon-schema".commento VALUES ('giudice7@innovation.it', 7, 'App turismo ben progettata');
+INSERT INTO "hackathon-schema".commento VALUES ('giudice8@startup.it', 8, 'Dashboard analytics molto utile');
+INSERT INTO "hackathon-schema".commento VALUES ('giudice9@digital.it', 9, 'Piattaforma green tech promettente');
+INSERT INTO "hackathon-schema".commento VALUES ('giudice10@code.it', 10, 'Soluzione energie rinnovabili innovativa');
+INSERT INTO "hackathon-schema".commento VALUES ('giudice1@tech.it', 11, 'Demo video efficace e coinvolgente');
 
 
 --
--- TOC entry 3457 (class 0 OID 17017)
--- Dependencies: 225
--- Data for Name: registrazione; Type: TABLE DATA; Schema: public; Owner: -
+-- TOC entry 3466 (class 0 OID 17365)
+-- Dependencies: 228
+-- Data for Name: documento; Type: TABLE DATA; Schema: hackathon-schema; Owner: -
 --
 
-INSERT INTO public.registrazione VALUES ('luca.monaco@gmail.com', 1);
-INSERT INTO public.registrazione VALUES ('sara.pellegrini@gmail.com', 1);
-INSERT INTO public.registrazione VALUES ('davide.santoro@gmail.com', 1);
-INSERT INTO public.registrazione VALUES ('elena.moretti@gmail.com', 1);
-INSERT INTO public.registrazione VALUES ('matteo.barbieri@gmail.com', 1);
-INSERT INTO public.registrazione VALUES ('chiara.fabbri@gmail.com', 1);
-INSERT INTO public.registrazione VALUES ('antonio.marini@gmail.com', 2);
-INSERT INTO public.registrazione VALUES ('federica.tosi@gmail.com', 2);
-INSERT INTO public.registrazione VALUES ('simone.gentili@gmail.com', 2);
-INSERT INTO public.registrazione VALUES ('valentina.caruso@gmail.com', 2);
-INSERT INTO public.registrazione VALUES ('francesco.leone@gmail.com', 2);
-INSERT INTO public.registrazione VALUES ('giorgia.longo@gmail.com', 2);
-INSERT INTO public.registrazione VALUES ('andrea.amato@gmail.com', 3);
-INSERT INTO public.registrazione VALUES ('martina.greco@gmail.com', 3);
-INSERT INTO public.registrazione VALUES ('roberto.orlando@gmail.com', 3);
-INSERT INTO public.registrazione VALUES ('alessia.fontana@gmail.com', 3);
-INSERT INTO public.registrazione VALUES ('michele.serra@gmail.com', 4);
-INSERT INTO public.registrazione VALUES ('laura.cattaneo@gmail.com', 4);
-INSERT INTO public.registrazione VALUES ('giovanni.ferraro@gmail.com', 4);
-INSERT INTO public.registrazione VALUES ('elisa.mazza@gmail.com', 4);
-INSERT INTO public.registrazione VALUES ('stefano.villa@gmail.com', 5);
-INSERT INTO public.registrazione VALUES ('anna.sanna@gmail.com', 5);
-INSERT INTO public.registrazione VALUES ('marco.riva@gmail.com', 5);
-INSERT INTO public.registrazione VALUES ('silvia.monti@gmail.com', 5);
-INSERT INTO public.registrazione VALUES ('fabio.battaglia@gmail.com', 1);
-INSERT INTO public.registrazione VALUES ('paola.palmieri@gmail.com', 1);
-INSERT INTO public.registrazione VALUES ('daniele.benedetti@gmail.com', 2);
-INSERT INTO public.registrazione VALUES ('sofia.caputo@gmail.com', 2);
-INSERT INTO public.registrazione VALUES ('lorenzo.pagano@gmail.com', 3);
-INSERT INTO public.registrazione VALUES ('isabella.messina@gmail.com', 3);
+INSERT INTO "hackathon-schema".documento VALUES (2, 'Presentazione progetto FinTech App', '2024-03-16', 'CodeMasters', 1);
+INSERT INTO "hackathon-schema".documento VALUES (3, 'Documentazione tecnica API', '2024-03-16', 'TechNinjas', 1);
+INSERT INTO "hackathon-schema".documento VALUES (4, 'Business Plan startup digitale', '2024-04-20', 'InnovateHub', 2);
+INSERT INTO "hackathon-schema".documento VALUES (5, 'Prototipo app mobile', '2024-04-21', 'DevStorm', 2);
+INSERT INTO "hackathon-schema".documento VALUES (6, 'Soluzione IoT per smart city', '2024-05-11', 'DigitalCrafters', 3);
+INSERT INTO "hackathon-schema".documento VALUES (7, 'Piattaforma e-commerce innovativa', '2024-05-12', 'ByteBuilders', 3);
+INSERT INTO "hackathon-schema".documento VALUES (8, 'App per turismo digitale', '2024-06-08', 'AppCreators', 4);
+INSERT INTO "hackathon-schema".documento VALUES (9, 'Dashboard analytics', '2024-06-09', 'DataDrivers', 4);
+INSERT INTO "hackathon-schema".documento VALUES (10, 'Piattaforma green tech', '2024-07-23', 'WebWizards', 5);
+INSERT INTO "hackathon-schema".documento VALUES (11, 'Soluzione energie rinnovabili', '2024-07-24', 'SolutionSeekers', 5);
+INSERT INTO "hackathon-schema".documento VALUES (12, 'Demo video progetto', '2024-03-17', 'CodeWarriors', 1);
+INSERT INTO "hackathon-schema".documento VALUES (13, 'Pitch presentation', '2024-04-21', 'TechTitans', 2);
+INSERT INTO "hackathon-schema".documento VALUES (14, 'Codice sorgente completo', '2024-05-12', 'InnovatorsUnited', 3);
+INSERT INTO "hackathon-schema".documento VALUES (15, 'Manual utente applicazione', '2024-06-09', 'DevDynamos', 4);
+INSERT INTO "hackathon-schema".documento VALUES (16, 'Report analisi mercato', '2024-07-24', 'DigitalDreamers', 5);
 
 
 --
--- TOC entry 3458 (class 0 OID 17020)
--- Dependencies: 226
--- Data for Name: team; Type: TABLE DATA; Schema: public; Owner: -
---
-
-INSERT INTO public.team VALUES ('AIMinds', 1);
-INSERT INTO public.team VALUES ('TechVision', 1);
-INSERT INTO public.team VALUES ('CodeCrafters', 1);
-INSERT INTO public.team VALUES ('EcoInnovators', 2);
-INSERT INTO public.team VALUES ('GreenTech Warriors', 2);
-INSERT INTO public.team VALUES ('SustainableCode', 2);
-INSERT INTO public.team VALUES ('FinTech Pioneers', 3);
-INSERT INTO public.team VALUES ('CryptoBuilders', 3);
-INSERT INTO public.team VALUES ('HealthTech Heroes', 4);
-INSERT INTO public.team VALUES ('MedInnovators', 4);
-INSERT INTO public.team VALUES ('SmartCity Builders', 5);
-INSERT INTO public.team VALUES ('UrbanTech', 5);
-
-
---
--- TOC entry 3459 (class 0 OID 17023)
--- Dependencies: 227
--- Data for Name: voto; Type: TABLE DATA; Schema: public; Owner: -
---
-
-INSERT INTO public.voto VALUES ('prof.martini@unibo.it', 'AIMinds', 8);
-INSERT INTO public.voto VALUES ('dott.conti@polimi.it', 'AIMinds', 7);
-INSERT INTO public.voto VALUES ('ing.romano@sapienza.it', 'AIMinds', 9);
-INSERT INTO public.voto VALUES ('prof.martini@unibo.it', 'TechVision', 7);
-INSERT INTO public.voto VALUES ('dott.conti@polimi.it', 'TechVision', 8);
-INSERT INTO public.voto VALUES ('ing.romano@sapienza.it', 'TechVision', 6);
-INSERT INTO public.voto VALUES ('prof.martini@unibo.it', 'CodeCrafters', 6);
-INSERT INTO public.voto VALUES ('dott.conti@polimi.it', 'CodeCrafters', 7);
-INSERT INTO public.voto VALUES ('ing.romano@sapienza.it', 'CodeCrafters', 8);
-INSERT INTO public.voto VALUES ('dott.esposito@unipi.it', 'EcoInnovators', 9);
-INSERT INTO public.voto VALUES ('prof.lombardi@unipd.it', 'EcoInnovators', 8);
-INSERT INTO public.voto VALUES ('dott.ricci@unimi.it', 'EcoInnovators', 8);
-INSERT INTO public.voto VALUES ('dott.esposito@unipi.it', 'GreenTech Warriors', 7);
-INSERT INTO public.voto VALUES ('prof.lombardi@unipd.it', 'GreenTech Warriors', 9);
-INSERT INTO public.voto VALUES ('dott.ricci@unimi.it', 'GreenTech Warriors', 7);
-INSERT INTO public.voto VALUES ('dott.esposito@unipi.it', 'SustainableCode', 8);
-INSERT INTO public.voto VALUES ('prof.lombardi@unipd.it', 'SustainableCode', 7);
-INSERT INTO public.voto VALUES ('dott.ricci@unimi.it', 'SustainableCode', 9);
-INSERT INTO public.voto VALUES ('ing.gallo@polito.it', 'FinTech Pioneers', 8);
-INSERT INTO public.voto VALUES ('prof.bruno@unige.it', 'FinTech Pioneers', 9);
-INSERT INTO public.voto VALUES ('ing.gallo@polito.it', 'CryptoBuilders', 7);
-INSERT INTO public.voto VALUES ('prof.bruno@unige.it', 'CryptoBuilders', 8);
-
-
---
--- TOC entry 3469 (class 0 OID 0)
+-- TOC entry 3455 (class 0 OID 17124)
 -- Dependencies: 217
--- Name: documento_id_doc_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Data for Name: giudice; Type: TABLE DATA; Schema: hackathon-schema; Owner: -
 --
 
-SELECT pg_catalog.setval('public.documento_id_doc_seq', 14, true);
+INSERT INTO "hackathon-schema".giudice VALUES ('giudice1@tech.it', 'Andrea', 'Colombo', true);
+INSERT INTO "hackathon-schema".giudice VALUES ('giudice2@innovation.it', 'Marta', 'Rizzo', true);
+INSERT INTO "hackathon-schema".giudice VALUES ('giudice3@startup.it', 'Davide', 'Marino', false);
+INSERT INTO "hackathon-schema".giudice VALUES ('giudice4@digital.it', 'Elisa', 'Gallo', true);
+INSERT INTO "hackathon-schema".giudice VALUES ('giudice5@code.it', 'Matteo', 'Bruno', true);
+INSERT INTO "hackathon-schema".giudice VALUES ('giudice6@tech.it', 'Alessia', 'De Luca', false);
+INSERT INTO "hackathon-schema".giudice VALUES ('giudice7@innovation.it', 'Simone', 'Moretti', true);
+INSERT INTO "hackathon-schema".giudice VALUES ('giudice8@startup.it', 'Valentina', 'Barbieri', true);
+INSERT INTO "hackathon-schema".giudice VALUES ('giudice9@digital.it', 'Federico', 'Pellegrini', true);
+INSERT INTO "hackathon-schema".giudice VALUES ('giudice10@code.it', 'Martina', 'Fontana', false);
 
 
 --
--- TOC entry 3470 (class 0 OID 0)
+-- TOC entry 3457 (class 0 OID 17131)
+-- Dependencies: 219
+-- Data for Name: hackathon; Type: TABLE DATA; Schema: hackathon-schema; Owner: -
+--
+
+INSERT INTO "hackathon-schema".hackathon VALUES (1, 'CodeSprint Milano', 'Milano', '2024-03-15', '2024-03-17', 100, 20, 'Hackathon di 3 giorni per sviluppare soluzioni innovative nel settore fintech', true, '2024-03-10', 'organizzatori@codesprint.it');
+INSERT INTO "hackathon-schema".hackathon VALUES (2, 'Tech Challenge Roma', 'Roma', '2024-04-20', '2024-04-21', 80, 15, 'Competizione tecnologica per startup e sviluppatori', true, '2024-04-15', 'info@techchallenge.it');
+INSERT INTO "hackathon-schema".hackathon VALUES (3, 'Innovation Days Torino', 'Torino', '2024-05-10', '2024-05-12', 120, 25, 'Evento dedicato all innovazione e alle nuove tecnologie', false, '2024-05-05', 'eventi@innovationdays.it');
+INSERT INTO "hackathon-schema".hackathon VALUES (4, 'Digital Hackathon Napoli', 'Napoli', '2024-06-08', '2024-06-09', 60, 12, 'Hackathon focalizzato su soluzioni digitali per il territorio', true, '2024-06-03', 'napoli@digitalhack.it');
+INSERT INTO "hackathon-schema".hackathon VALUES (5, 'Green Tech Challenge', 'Bologna', '2024-07-22', '2024-07-24', 90, 18, 'Competizione per sviluppare tecnologie sostenibili', true, '2024-07-17', 'green@techchallenge.it');
+
+
+--
+-- TOC entry 3464 (class 0 OID 17347)
+-- Dependencies: 226
+-- Data for Name: invitogiudice; Type: TABLE DATA; Schema: hackathon-schema; Owner: -
+--
+
+INSERT INTO "hackathon-schema".invitogiudice VALUES ('giudice1@tech.it', 1);
+INSERT INTO "hackathon-schema".invitogiudice VALUES ('giudice2@innovation.it', 1);
+INSERT INTO "hackathon-schema".invitogiudice VALUES ('giudice3@startup.it', 2);
+INSERT INTO "hackathon-schema".invitogiudice VALUES ('giudice4@digital.it', 2);
+INSERT INTO "hackathon-schema".invitogiudice VALUES ('giudice5@code.it', 3);
+INSERT INTO "hackathon-schema".invitogiudice VALUES ('giudice6@tech.it', 3);
+INSERT INTO "hackathon-schema".invitogiudice VALUES ('giudice7@innovation.it', 4);
+INSERT INTO "hackathon-schema".invitogiudice VALUES ('giudice8@startup.it', 4);
+INSERT INTO "hackathon-schema".invitogiudice VALUES ('giudice9@digital.it', 5);
+INSERT INTO "hackathon-schema".invitogiudice VALUES ('giudice10@code.it', 5);
+INSERT INTO "hackathon-schema".invitogiudice VALUES ('giudice1@tech.it', 3);
+INSERT INTO "hackathon-schema".invitogiudice VALUES ('giudice2@innovation.it', 4);
+INSERT INTO "hackathon-schema".invitogiudice VALUES ('giudice4@digital.it', 5);
+
+
+--
+-- TOC entry 3454 (class 0 OID 17119)
+-- Dependencies: 216
+-- Data for Name: organizzatore; Type: TABLE DATA; Schema: hackathon-schema; Owner: -
+--
+
+INSERT INTO "hackathon-schema".organizzatore VALUES ('organizzatori@codesprint.it', 'Mario', 'Bianchi', 5);
+INSERT INTO "hackathon-schema".organizzatore VALUES ('info@techchallenge.it', 'Anna', 'Rossi', 3);
+INSERT INTO "hackathon-schema".organizzatore VALUES ('eventi@innovationdays.it', 'Paolo', 'Verdi', 8);
+INSERT INTO "hackathon-schema".organizzatore VALUES ('napoli@digitalhack.it', 'Claudia', 'Neri', 4);
+INSERT INTO "hackathon-schema".organizzatore VALUES ('green@techchallenge.it', 'Roberto', 'Galli', 6);
+INSERT INTO "hackathon-schema".organizzatore VALUES ('tech@events.it', 'Silvia', 'Moretti', 7);
+INSERT INTO "hackathon-schema".organizzatore VALUES ('innovation@hub.it', 'Giuseppe', 'Ferrari', 5);
+INSERT INTO "hackathon-schema".organizzatore VALUES ('digital@solution.it', 'Francesca', 'Romano', 4);
+INSERT INTO "hackathon-schema".organizzatore VALUES ('startup@accelerator.it', 'Lorenzo', 'Conti', 6);
+INSERT INTO "hackathon-schema".organizzatore VALUES ('hackathon@manager.it', 'Valentina', 'Ricci', 9);
+
+
+--
+-- TOC entry 3453 (class 0 OID 17114)
+-- Dependencies: 215
+-- Data for Name: partecipante; Type: TABLE DATA; Schema: hackathon-schema; Owner: -
+--
+
+INSERT INTO "hackathon-schema".partecipante VALUES ('marco.rossi@gmail.com', 'Marco', 'Rossi', 'Developer');
+INSERT INTO "hackathon-schema".partecipante VALUES ('giulia.bianchi@yahoo.it', 'Giulia', 'Bianchi', 'Designer');
+INSERT INTO "hackathon-schema".partecipante VALUES ('alessandro.verdi@outlook.com', 'Alessandro', 'Verdi', 'Developer');
+INSERT INTO "hackathon-schema".partecipante VALUES ('francesca.ferrari@gmail.com', 'Francesca', 'Ferrari', 'Project Manager');
+INSERT INTO "hackathon-schema".partecipante VALUES ('luca.romano@hotmail.com', 'Luca', 'Romano', 'Developer');
+INSERT INTO "hackathon-schema".partecipante VALUES ('sara.colombo@gmail.com', 'Sara', 'Colombo', 'Designer');
+INSERT INTO "hackathon-schema".partecipante VALUES ('davide.ricci@yahoo.it', 'Davide', 'Ricci', 'Developer');
+INSERT INTO "hackathon-schema".partecipante VALUES ('elena.marino@gmail.com', 'Elena', 'Marino', 'Marketing');
+INSERT INTO "hackathon-schema".partecipante VALUES ('andrea.gallo@outlook.com', 'Andrea', 'Gallo', 'Developer');
+INSERT INTO "hackathon-schema".partecipante VALUES ('chiara.conti@gmail.com', 'Chiara', 'Conti', 'UI/UX Designer');
+INSERT INTO "hackathon-schema".partecipante VALUES ('matteo.bruno@hotmail.com', 'Matteo', 'Bruno', 'Backend Developer');
+INSERT INTO "hackathon-schema".partecipante VALUES ('laura.de.luca@gmail.com', 'Laura', 'De Luca', 'Frontend Developer');
+INSERT INTO "hackathon-schema".partecipante VALUES ('simone.moretti@yahoo.it', 'Simone', 'Moretti', 'Data Scientist');
+INSERT INTO "hackathon-schema".partecipante VALUES ('valentina.barbieri@gmail.com', 'Valentina', 'Barbieri', 'Business Analyst');
+INSERT INTO "hackathon-schema".partecipante VALUES ('federico.pellegrini@outlook.com', 'Federico', 'Pellegrini', 'Developer');
+INSERT INTO "hackathon-schema".partecipante VALUES ('martina.fontana@gmail.com', 'Martina', 'Fontana', 'Designer');
+INSERT INTO "hackathon-schema".partecipante VALUES ('giovanni.santoro@hotmail.com', 'Giovanni', 'Santoro', 'DevOps');
+INSERT INTO "hackathon-schema".partecipante VALUES ('alice.marini@gmail.com', 'Alice', 'Marini', 'Full Stack Developer');
+INSERT INTO "hackathon-schema".partecipante VALUES ('lorenzo.villa@yahoo.it', 'Lorenzo', 'Villa', 'Mobile Developer');
+INSERT INTO "hackathon-schema".partecipante VALUES ('sofia.greco@gmail.com', 'Sofia', 'Greco', 'Product Manager');
+INSERT INTO "hackathon-schema".partecipante VALUES ('antonio.lombardi@outlook.com', 'Antonio', 'Lombardi', 'Developer');
+INSERT INTO "hackathon-schema".partecipante VALUES ('rebecca.rizzo@gmail.com', 'Rebecca', 'Rizzo', 'Designer');
+INSERT INTO "hackathon-schema".partecipante VALUES ('diego.costa@hotmail.com', 'Diego', 'Costa', 'Security Specialist');
+INSERT INTO "hackathon-schema".partecipante VALUES ('camilla.russo@gmail.com', 'Camilla', 'Russo', 'QA Engineer');
+INSERT INTO "hackathon-schema".partecipante VALUES ('nicola.ferrara@yahoo.it', 'Nicola', 'Ferrara', 'Developer');
+INSERT INTO "hackathon-schema".partecipante VALUES ('irene.orlando@gmail.com', 'Irene', 'Orlando', 'Scrum Master');
+INSERT INTO "hackathon-schema".partecipante VALUES ('alberto.leone@outlook.com', 'Alberto', 'Leone', 'AI Developer');
+INSERT INTO "hackathon-schema".partecipante VALUES ('giorgia.longo@gmail.com', 'Giorgia', 'Longo', 'Growth Hacker');
+INSERT INTO "hackathon-schema".partecipante VALUES ('stefano.d.angelo@hotmail.com', 'Stefano', 'D Angelo', 'Backend Developer');
+INSERT INTO "hackathon-schema".partecipante VALUES ('carla.benedetti@gmail.com', 'Carla', 'Benedetti', 'Frontend Developer');
+
+
+--
+-- TOC entry 3461 (class 0 OID 17183)
+-- Dependencies: 223
+-- Data for Name: partecipante_team; Type: TABLE DATA; Schema: hackathon-schema; Owner: -
+--
+
+INSERT INTO "hackathon-schema".partecipante_team VALUES ('marco.rossi@gmail.com', 'CodeMasters');
+INSERT INTO "hackathon-schema".partecipante_team VALUES ('giulia.bianchi@yahoo.it', 'CodeMasters');
+INSERT INTO "hackathon-schema".partecipante_team VALUES ('alessandro.verdi@outlook.com', 'TechNinjas');
+INSERT INTO "hackathon-schema".partecipante_team VALUES ('francesca.ferrari@gmail.com', 'TechNinjas');
+INSERT INTO "hackathon-schema".partecipante_team VALUES ('luca.romano@hotmail.com', 'InnovateHub');
+INSERT INTO "hackathon-schema".partecipante_team VALUES ('sara.colombo@gmail.com', 'InnovateHub');
+INSERT INTO "hackathon-schema".partecipante_team VALUES ('davide.ricci@yahoo.it', 'DevStorm');
+INSERT INTO "hackathon-schema".partecipante_team VALUES ('elena.marino@gmail.com', 'DevStorm');
+INSERT INTO "hackathon-schema".partecipante_team VALUES ('andrea.gallo@outlook.com', 'DigitalCrafters');
+INSERT INTO "hackathon-schema".partecipante_team VALUES ('chiara.conti@gmail.com', 'DigitalCrafters');
+INSERT INTO "hackathon-schema".partecipante_team VALUES ('matteo.bruno@hotmail.com', 'ByteBuilders');
+INSERT INTO "hackathon-schema".partecipante_team VALUES ('laura.de.luca@gmail.com', 'ByteBuilders');
+INSERT INTO "hackathon-schema".partecipante_team VALUES ('simone.moretti@yahoo.it', 'AppCreators');
+INSERT INTO "hackathon-schema".partecipante_team VALUES ('valentina.barbieri@gmail.com', 'AppCreators');
+INSERT INTO "hackathon-schema".partecipante_team VALUES ('federico.pellegrini@outlook.com', 'DataDrivers');
+INSERT INTO "hackathon-schema".partecipante_team VALUES ('martina.fontana@gmail.com', 'DataDrivers');
+INSERT INTO "hackathon-schema".partecipante_team VALUES ('giovanni.santoro@hotmail.com', 'WebWizards');
+INSERT INTO "hackathon-schema".partecipante_team VALUES ('alice.marini@gmail.com', 'WebWizards');
+INSERT INTO "hackathon-schema".partecipante_team VALUES ('lorenzo.villa@yahoo.it', 'SolutionSeekers');
+INSERT INTO "hackathon-schema".partecipante_team VALUES ('sofia.greco@gmail.com', 'SolutionSeekers');
+
+
+--
+-- TOC entry 3460 (class 0 OID 17168)
+-- Dependencies: 222
+-- Data for Name: registrazione; Type: TABLE DATA; Schema: hackathon-schema; Owner: -
+--
+
+INSERT INTO "hackathon-schema".registrazione VALUES ('marco.rossi@gmail.com', 1);
+INSERT INTO "hackathon-schema".registrazione VALUES ('giulia.bianchi@yahoo.it', 1);
+INSERT INTO "hackathon-schema".registrazione VALUES ('alessandro.verdi@outlook.com', 1);
+INSERT INTO "hackathon-schema".registrazione VALUES ('francesca.ferrari@gmail.com', 1);
+INSERT INTO "hackathon-schema".registrazione VALUES ('luca.romano@hotmail.com', 2);
+INSERT INTO "hackathon-schema".registrazione VALUES ('sara.colombo@gmail.com', 2);
+INSERT INTO "hackathon-schema".registrazione VALUES ('davide.ricci@yahoo.it', 2);
+INSERT INTO "hackathon-schema".registrazione VALUES ('elena.marino@gmail.com', 3);
+INSERT INTO "hackathon-schema".registrazione VALUES ('andrea.gallo@outlook.com', 3);
+INSERT INTO "hackathon-schema".registrazione VALUES ('chiara.conti@gmail.com', 3);
+INSERT INTO "hackathon-schema".registrazione VALUES ('matteo.bruno@hotmail.com', 4);
+INSERT INTO "hackathon-schema".registrazione VALUES ('laura.de.luca@gmail.com', 4);
+INSERT INTO "hackathon-schema".registrazione VALUES ('simone.moretti@yahoo.it', 4);
+INSERT INTO "hackathon-schema".registrazione VALUES ('valentina.barbieri@gmail.com', 5);
+INSERT INTO "hackathon-schema".registrazione VALUES ('federico.pellegrini@outlook.com', 5);
+INSERT INTO "hackathon-schema".registrazione VALUES ('martina.fontana@gmail.com', 1);
+INSERT INTO "hackathon-schema".registrazione VALUES ('giovanni.santoro@hotmail.com', 1);
+INSERT INTO "hackathon-schema".registrazione VALUES ('alice.marini@gmail.com', 2);
+INSERT INTO "hackathon-schema".registrazione VALUES ('lorenzo.villa@yahoo.it', 3);
+INSERT INTO "hackathon-schema".registrazione VALUES ('sofia.greco@gmail.com', 4);
+
+
+--
+-- TOC entry 3458 (class 0 OID 17148)
 -- Dependencies: 220
--- Name: hackathon_id_hackathon_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Data for Name: team; Type: TABLE DATA; Schema: hackathon-schema; Owner: -
 --
 
-SELECT pg_catalog.setval('public.hackathon_id_hackathon_seq', 5, true);
+INSERT INTO "hackathon-schema".team VALUES ('CodeMasters');
+INSERT INTO "hackathon-schema".team VALUES ('TechNinjas');
+INSERT INTO "hackathon-schema".team VALUES ('InnovateHub');
+INSERT INTO "hackathon-schema".team VALUES ('DevStorm');
+INSERT INTO "hackathon-schema".team VALUES ('DigitalCrafters');
+INSERT INTO "hackathon-schema".team VALUES ('ByteBuilders');
+INSERT INTO "hackathon-schema".team VALUES ('AppCreators');
+INSERT INTO "hackathon-schema".team VALUES ('DataDrivers');
+INSERT INTO "hackathon-schema".team VALUES ('WebWizards');
+INSERT INTO "hackathon-schema".team VALUES ('SolutionSeekers');
+INSERT INTO "hackathon-schema".team VALUES ('CodeWarriors');
+INSERT INTO "hackathon-schema".team VALUES ('TechTitans');
+INSERT INTO "hackathon-schema".team VALUES ('InnovatorsUnited');
+INSERT INTO "hackathon-schema".team VALUES ('DevDynamos');
+INSERT INTO "hackathon-schema".team VALUES ('DigitalDreamers');
 
 
 --
--- TOC entry 3265 (class 2606 OID 17030)
--- Name: commento commento_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3459 (class 0 OID 17153)
+-- Dependencies: 221
+-- Data for Name: team_hackathon; Type: TABLE DATA; Schema: hackathon-schema; Owner: -
 --
 
-ALTER TABLE ONLY public.commento
+INSERT INTO "hackathon-schema".team_hackathon VALUES ('CodeMasters', 1);
+INSERT INTO "hackathon-schema".team_hackathon VALUES ('TechNinjas', 1);
+INSERT INTO "hackathon-schema".team_hackathon VALUES ('InnovateHub', 2);
+INSERT INTO "hackathon-schema".team_hackathon VALUES ('DevStorm', 2);
+INSERT INTO "hackathon-schema".team_hackathon VALUES ('DigitalCrafters', 3);
+INSERT INTO "hackathon-schema".team_hackathon VALUES ('ByteBuilders', 3);
+INSERT INTO "hackathon-schema".team_hackathon VALUES ('AppCreators', 4);
+INSERT INTO "hackathon-schema".team_hackathon VALUES ('DataDrivers', 4);
+INSERT INTO "hackathon-schema".team_hackathon VALUES ('WebWizards', 5);
+INSERT INTO "hackathon-schema".team_hackathon VALUES ('SolutionSeekers', 5);
+INSERT INTO "hackathon-schema".team_hackathon VALUES ('CodeWarriors', 1);
+INSERT INTO "hackathon-schema".team_hackathon VALUES ('TechTitans', 2);
+INSERT INTO "hackathon-schema".team_hackathon VALUES ('InnovatorsUnited', 3);
+INSERT INTO "hackathon-schema".team_hackathon VALUES ('DevDynamos', 4);
+INSERT INTO "hackathon-schema".team_hackathon VALUES ('DigitalDreamers', 5);
+
+
+--
+-- TOC entry 3463 (class 0 OID 17331)
+-- Dependencies: 225
+-- Data for Name: voto; Type: TABLE DATA; Schema: hackathon-schema; Owner: -
+--
+
+INSERT INTO "hackathon-schema".voto VALUES ('giudice1@tech.it', 'CodeMasters', 1, 9);
+INSERT INTO "hackathon-schema".voto VALUES ('giudice2@innovation.it', 'CodeMasters', 1, 8);
+INSERT INTO "hackathon-schema".voto VALUES ('giudice1@tech.it', 'TechNinjas', 1, 7);
+INSERT INTO "hackathon-schema".voto VALUES ('giudice2@innovation.it', 'TechNinjas', 1, 8);
+INSERT INTO "hackathon-schema".voto VALUES ('giudice3@startup.it', 'InnovateHub', 2, 9);
+INSERT INTO "hackathon-schema".voto VALUES ('giudice4@digital.it', 'InnovateHub', 2, 9);
+INSERT INTO "hackathon-schema".voto VALUES ('giudice3@startup.it', 'DevStorm', 2, 8);
+INSERT INTO "hackathon-schema".voto VALUES ('giudice4@digital.it', 'DevStorm', 2, 8);
+INSERT INTO "hackathon-schema".voto VALUES ('giudice5@code.it', 'DigitalCrafters', 3, 9);
+INSERT INTO "hackathon-schema".voto VALUES ('giudice6@tech.it', 'DigitalCrafters', 3, 8);
+INSERT INTO "hackathon-schema".voto VALUES ('giudice5@code.it', 'ByteBuilders', 3, 8);
+INSERT INTO "hackathon-schema".voto VALUES ('giudice6@tech.it', 'ByteBuilders', 3, 8);
+INSERT INTO "hackathon-schema".voto VALUES ('giudice7@innovation.it', 'AppCreators', 4, 9);
+INSERT INTO "hackathon-schema".voto VALUES ('giudice8@startup.it', 'AppCreators', 4, 9);
+INSERT INTO "hackathon-schema".voto VALUES ('giudice9@digital.it', 'WebWizards', 5, 10);
+INSERT INTO "hackathon-schema".voto VALUES ('giudice10@code.it', 'WebWizards', 5, 9);
+INSERT INTO "hackathon-schema".voto VALUES ('giudice9@digital.it', 'SolutionSeekers', 5, 8);
+INSERT INTO "hackathon-schema".voto VALUES ('giudice10@code.it', 'SolutionSeekers', 5, 9);
+
+
+--
+-- TOC entry 3475 (class 0 OID 0)
+-- Dependencies: 227
+-- Name: documento_id_doc_seq; Type: SEQUENCE SET; Schema: hackathon-schema; Owner: -
+--
+
+SELECT pg_catalog.setval('"hackathon-schema".documento_id_doc_seq', 16, true);
+
+
+--
+-- TOC entry 3476 (class 0 OID 0)
+-- Dependencies: 218
+-- Name: hackathon_id_hackathon_seq; Type: SEQUENCE SET; Schema: hackathon-schema; Owner: -
+--
+
+SELECT pg_catalog.setval('"hackathon-schema".hackathon_id_hackathon_seq', 25, true);
+
+
+--
+-- TOC entry 3284 (class 2606 OID 17320)
+-- Name: commento commento_pkey; Type: CONSTRAINT; Schema: hackathon-schema; Owner: -
+--
+
+ALTER TABLE ONLY "hackathon-schema".commento
     ADD CONSTRAINT commento_pkey PRIMARY KEY (email_giudice, id_doc);
 
 
 --
--- TOC entry 3267 (class 2606 OID 17032)
--- Name: documento documento_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3290 (class 2606 OID 17372)
+-- Name: documento documento_pkey; Type: CONSTRAINT; Schema: hackathon-schema; Owner: -
 --
 
-ALTER TABLE ONLY public.documento
+ALTER TABLE ONLY "hackathon-schema".documento
     ADD CONSTRAINT documento_pkey PRIMARY KEY (id_doc);
 
 
 --
--- TOC entry 3269 (class 2606 OID 17034)
--- Name: giudice giudice_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3272 (class 2606 OID 17129)
+-- Name: giudice giudice_pkey; Type: CONSTRAINT; Schema: hackathon-schema; Owner: -
 --
 
-ALTER TABLE ONLY public.giudice
+ALTER TABLE ONLY "hackathon-schema".giudice
     ADD CONSTRAINT giudice_pkey PRIMARY KEY (email);
 
 
 --
--- TOC entry 3271 (class 2606 OID 17036)
--- Name: hackathon hackathon_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3274 (class 2606 OID 17142)
+-- Name: hackathon hackathon_pkey; Type: CONSTRAINT; Schema: hackathon-schema; Owner: -
 --
 
-ALTER TABLE ONLY public.hackathon
+ALTER TABLE ONLY "hackathon-schema".hackathon
     ADD CONSTRAINT hackathon_pkey PRIMARY KEY (id_hackathon);
 
 
 --
--- TOC entry 3273 (class 2606 OID 17038)
--- Name: invitogiudice invitogiudice_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3288 (class 2606 OID 17351)
+-- Name: invitogiudice invitogiudice_pkey; Type: CONSTRAINT; Schema: hackathon-schema; Owner: -
 --
 
-ALTER TABLE ONLY public.invitogiudice
+ALTER TABLE ONLY "hackathon-schema".invitogiudice
     ADD CONSTRAINT invitogiudice_pkey PRIMARY KEY (email_giudice, id_hackathon);
 
 
 --
--- TOC entry 3275 (class 2606 OID 17040)
--- Name: organizzatore organizzatore_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3270 (class 2606 OID 17123)
+-- Name: organizzatore organizzatore_pkey; Type: CONSTRAINT; Schema: hackathon-schema; Owner: -
 --
 
-ALTER TABLE ONLY public.organizzatore
+ALTER TABLE ONLY "hackathon-schema".organizzatore
     ADD CONSTRAINT organizzatore_pkey PRIMARY KEY (email);
 
 
 --
--- TOC entry 3277 (class 2606 OID 17042)
--- Name: partecipante partecipante_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3268 (class 2606 OID 17118)
+-- Name: partecipante partecipante_pkey; Type: CONSTRAINT; Schema: hackathon-schema; Owner: -
 --
 
-ALTER TABLE ONLY public.partecipante
+ALTER TABLE ONLY "hackathon-schema".partecipante
     ADD CONSTRAINT partecipante_pkey PRIMARY KEY (email);
 
 
 --
--- TOC entry 3279 (class 2606 OID 17044)
--- Name: partecipante_team partecipante_team_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3282 (class 2606 OID 17187)
+-- Name: partecipante_team partecipante_team_pkey; Type: CONSTRAINT; Schema: hackathon-schema; Owner: -
 --
 
-ALTER TABLE ONLY public.partecipante_team
+ALTER TABLE ONLY "hackathon-schema".partecipante_team
     ADD CONSTRAINT partecipante_team_pkey PRIMARY KEY (email_partecipante, nome_team);
 
 
 --
--- TOC entry 3281 (class 2606 OID 17046)
--- Name: registrazione registrazione_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3280 (class 2606 OID 17172)
+-- Name: registrazione registrazione_pkey; Type: CONSTRAINT; Schema: hackathon-schema; Owner: -
 --
 
-ALTER TABLE ONLY public.registrazione
+ALTER TABLE ONLY "hackathon-schema".registrazione
     ADD CONSTRAINT registrazione_pkey PRIMARY KEY (email_partecipante, id_hackathon);
 
 
 --
--- TOC entry 3283 (class 2606 OID 17048)
--- Name: team team_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3278 (class 2606 OID 17157)
+-- Name: team_hackathon team_hackathon_pkey; Type: CONSTRAINT; Schema: hackathon-schema; Owner: -
 --
 
-ALTER TABLE ONLY public.team
+ALTER TABLE ONLY "hackathon-schema".team_hackathon
+    ADD CONSTRAINT team_hackathon_pkey PRIMARY KEY (nome_team, id_hackathon);
+
+
+--
+-- TOC entry 3276 (class 2606 OID 17152)
+-- Name: team team_pkey; Type: CONSTRAINT; Schema: hackathon-schema; Owner: -
+--
+
+ALTER TABLE ONLY "hackathon-schema".team
     ADD CONSTRAINT team_pkey PRIMARY KEY (nome_team);
 
 
 --
--- TOC entry 3285 (class 2606 OID 17050)
--- Name: voto voto_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3286 (class 2606 OID 17336)
+-- Name: voto voto_pkey; Type: CONSTRAINT; Schema: hackathon-schema; Owner: -
 --
 
-ALTER TABLE ONLY public.voto
+ALTER TABLE ONLY "hackathon-schema".voto
     ADD CONSTRAINT voto_pkey PRIMARY KEY (email_giudice, nome_team);
 
 
 --
--- TOC entry 3297 (class 2620 OID 17112)
--- Name: documento trg_check_data_caricamento; Type: TRIGGER; Schema: public; Owner: -
+-- TOC entry 3309 (class 2620 OID 17383)
+-- Name: documento trg_check_data_caricamento; Type: TRIGGER; Schema: hackathon-schema; Owner: -
 --
 
-CREATE TRIGGER trg_check_data_caricamento BEFORE INSERT OR UPDATE ON public.documento FOR EACH ROW EXECUTE FUNCTION public.check_data_caricamento_documento();
-
-
---
--- TOC entry 3301 (class 2620 OID 17051)
--- Name: registrazione trg_check_hackathon_overlap; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER trg_check_hackathon_overlap BEFORE INSERT OR UPDATE ON public.registrazione FOR EACH ROW EXECUTE FUNCTION public.check_hackathon_overlap();
+CREATE TRIGGER trg_check_data_caricamento BEFORE INSERT OR UPDATE ON "hackathon-schema".documento FOR EACH ROW EXECUTE FUNCTION "hackathon-schema".check_data_caricamento_documento();
 
 
 --
--- TOC entry 3302 (class 2620 OID 17052)
--- Name: registrazione trg_check_max_partecipanti; Type: TRIGGER; Schema: public; Owner: -
+-- TOC entry 3306 (class 2620 OID 17260)
+-- Name: registrazione trg_check_hackathon_overlap; Type: TRIGGER; Schema: hackathon-schema; Owner: -
 --
 
-CREATE TRIGGER trg_check_max_partecipanti BEFORE INSERT ON public.registrazione FOR EACH ROW EXECUTE FUNCTION public.check_max_partecipanti();
-
-
---
--- TOC entry 3299 (class 2620 OID 17053)
--- Name: partecipante_team trg_check_max_partecipanti_per_team; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER trg_check_max_partecipanti_per_team BEFORE INSERT ON public.partecipante_team FOR EACH ROW EXECUTE FUNCTION public.check_max_partecipanti_per_team();
+CREATE TRIGGER trg_check_hackathon_overlap BEFORE INSERT OR UPDATE ON "hackathon-schema".registrazione FOR EACH ROW EXECUTE FUNCTION "hackathon-schema".check_hackathon_overlap();
 
 
 --
--- TOC entry 3303 (class 2620 OID 17054)
--- Name: team trg_check_max_team; Type: TRIGGER; Schema: public; Owner: -
+-- TOC entry 3307 (class 2620 OID 17256)
+-- Name: registrazione trg_check_max_partecipanti; Type: TRIGGER; Schema: hackathon-schema; Owner: -
 --
 
-CREATE TRIGGER trg_check_max_team BEFORE INSERT ON public.team FOR EACH ROW EXECUTE FUNCTION public.check_max_team();
-
-
---
--- TOC entry 3300 (class 2620 OID 17055)
--- Name: partecipante_team trg_check_unique_participant; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER trg_check_unique_participant BEFORE INSERT ON public.partecipante_team FOR EACH ROW EXECUTE FUNCTION public.check_unique_participant_per_hackathon();
+CREATE TRIGGER trg_check_max_partecipanti BEFORE INSERT ON "hackathon-schema".registrazione FOR EACH ROW EXECUTE FUNCTION "hackathon-schema".check_max_partecipanti();
 
 
 --
--- TOC entry 3298 (class 2620 OID 17111)
--- Name: documento trigger_data_caricamento; Type: TRIGGER; Schema: public; Owner: -
+-- TOC entry 3304 (class 2620 OID 17272)
+-- Name: team_hackathon trg_check_max_partecipanti_per_team; Type: TRIGGER; Schema: hackathon-schema; Owner: -
 --
 
-CREATE TRIGGER trigger_data_caricamento BEFORE INSERT OR UPDATE ON public.documento FOR EACH ROW EXECUTE FUNCTION public.check_data_caricamento();
-
-
---
--- TOC entry 3286 (class 2606 OID 17056)
--- Name: commento fk_commento_doc; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.commento
-    ADD CONSTRAINT fk_commento_doc FOREIGN KEY (id_doc) REFERENCES public.documento(id_doc);
+CREATE TRIGGER trg_check_max_partecipanti_per_team BEFORE INSERT ON "hackathon-schema".team_hackathon FOR EACH ROW EXECUTE FUNCTION "hackathon-schema".check_max_partecipanti_per_team();
 
 
 --
--- TOC entry 3287 (class 2606 OID 17061)
--- Name: commento fk_commento_giudice; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3305 (class 2620 OID 17270)
+-- Name: team_hackathon trg_check_max_team; Type: TRIGGER; Schema: hackathon-schema; Owner: -
 --
 
-ALTER TABLE ONLY public.commento
-    ADD CONSTRAINT fk_commento_giudice FOREIGN KEY (email_giudice) REFERENCES public.giudice(email);
-
-
---
--- TOC entry 3295 (class 2606 OID 17066)
--- Name: team fk_hackathon_team; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.team
-    ADD CONSTRAINT fk_hackathon_team FOREIGN KEY (id_hackathon) REFERENCES public.hackathon(id_hackathon);
+CREATE TRIGGER trg_check_max_team BEFORE INSERT ON "hackathon-schema".team_hackathon FOR EACH ROW EXECUTE FUNCTION "hackathon-schema".check_max_team();
 
 
 --
--- TOC entry 3290 (class 2606 OID 17071)
--- Name: invitogiudice fk_invito_hack; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3308 (class 2620 OID 17251)
+-- Name: partecipante_team trg_check_unique_partecipante; Type: TRIGGER; Schema: hackathon-schema; Owner: -
 --
 
-ALTER TABLE ONLY public.invitogiudice
-    ADD CONSTRAINT fk_invito_hack FOREIGN KEY (id_hackathon) REFERENCES public.hackathon(id_hackathon);
-
-
---
--- TOC entry 3289 (class 2606 OID 17076)
--- Name: hackathon fk_organizzatore; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.hackathon
-    ADD CONSTRAINT fk_organizzatore FOREIGN KEY (email_organizzatore) REFERENCES public.organizzatore(email);
+CREATE TRIGGER trg_check_unique_partecipante BEFORE INSERT ON "hackathon-schema".partecipante_team FOR EACH ROW EXECUTE FUNCTION "hackathon-schema".check_unique_partecipante_per_hackathon();
 
 
 --
--- TOC entry 3291 (class 2606 OID 17081)
--- Name: partecipante_team fk_partecipante; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3298 (class 2606 OID 17326)
+-- Name: commento fk_commento_giudice; Type: FK CONSTRAINT; Schema: hackathon-schema; Owner: -
 --
 
-ALTER TABLE ONLY public.partecipante_team
-    ADD CONSTRAINT fk_partecipante FOREIGN KEY (email_partecipante) REFERENCES public.partecipante(email);
-
-
---
--- TOC entry 3293 (class 2606 OID 17086)
--- Name: registrazione fk_registrazione_hack; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.registrazione
-    ADD CONSTRAINT fk_registrazione_hack FOREIGN KEY (id_hackathon) REFERENCES public.hackathon(id_hackathon);
+ALTER TABLE ONLY "hackathon-schema".commento
+    ADD CONSTRAINT fk_commento_giudice FOREIGN KEY (email_giudice) REFERENCES "hackathon-schema".giudice(email);
 
 
 --
--- TOC entry 3294 (class 2606 OID 17091)
--- Name: registrazione fk_registrazione_part; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3301 (class 2606 OID 17352)
+-- Name: invitogiudice fk_invito_giudice; Type: FK CONSTRAINT; Schema: hackathon-schema; Owner: -
 --
 
-ALTER TABLE ONLY public.registrazione
-    ADD CONSTRAINT fk_registrazione_part FOREIGN KEY (email_partecipante) REFERENCES public.partecipante(email);
-
-
---
--- TOC entry 3292 (class 2606 OID 17096)
--- Name: partecipante_team fk_team; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.partecipante_team
-    ADD CONSTRAINT fk_team FOREIGN KEY (nome_team) REFERENCES public.team(nome_team);
+ALTER TABLE ONLY "hackathon-schema".invitogiudice
+    ADD CONSTRAINT fk_invito_giudice FOREIGN KEY (email_giudice) REFERENCES "hackathon-schema".giudice(email);
 
 
 --
--- TOC entry 3288 (class 2606 OID 17101)
--- Name: documento fk_team_doc; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- TOC entry 3302 (class 2606 OID 17357)
+-- Name: invitogiudice fk_invito_hack; Type: FK CONSTRAINT; Schema: hackathon-schema; Owner: -
 --
 
-ALTER TABLE ONLY public.documento
-    ADD CONSTRAINT fk_team_doc FOREIGN KEY (nome_team) REFERENCES public.team(nome_team);
-
-
---
--- TOC entry 3296 (class 2606 OID 17106)
--- Name: voto fk_voto_team; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.voto
-    ADD CONSTRAINT fk_voto_team FOREIGN KEY (nome_team) REFERENCES public.team(nome_team);
+ALTER TABLE ONLY "hackathon-schema".invitogiudice
+    ADD CONSTRAINT fk_invito_hack FOREIGN KEY (id_hackathon) REFERENCES "hackathon-schema".hackathon(id_hackathon);
 
 
 --
--- TOC entry 3466 (class 0 OID 0)
--- Dependencies: 5
--- Name: SCHEMA public; Type: ACL; Schema: -; Owner: -
+-- TOC entry 3291 (class 2606 OID 17143)
+-- Name: hackathon fk_organizzatore; Type: FK CONSTRAINT; Schema: hackathon-schema; Owner: -
 --
 
-REVOKE USAGE ON SCHEMA public FROM PUBLIC;
+ALTER TABLE ONLY "hackathon-schema".hackathon
+    ADD CONSTRAINT fk_organizzatore FOREIGN KEY (email_organizzatore) REFERENCES "hackathon-schema".organizzatore(email);
 
 
--- Completed on 2025-07-16 13:27:05 UTC
+--
+-- TOC entry 3296 (class 2606 OID 17188)
+-- Name: partecipante_team fk_partecipante; Type: FK CONSTRAINT; Schema: hackathon-schema; Owner: -
+--
+
+ALTER TABLE ONLY "hackathon-schema".partecipante_team
+    ADD CONSTRAINT fk_partecipante FOREIGN KEY (email_partecipante) REFERENCES "hackathon-schema".partecipante(email);
+
+
+--
+-- TOC entry 3297 (class 2606 OID 17193)
+-- Name: partecipante_team fk_team; Type: FK CONSTRAINT; Schema: hackathon-schema; Owner: -
+--
+
+ALTER TABLE ONLY "hackathon-schema".partecipante_team
+    ADD CONSTRAINT fk_team FOREIGN KEY (nome_team) REFERENCES "hackathon-schema".team(nome_team);
+
+
+--
+-- TOC entry 3303 (class 2606 OID 17373)
+-- Name: documento fk_team_doc; Type: FK CONSTRAINT; Schema: hackathon-schema; Owner: -
+--
+
+ALTER TABLE ONLY "hackathon-schema".documento
+    ADD CONSTRAINT fk_team_doc FOREIGN KEY (nome_team, id_hackathon) REFERENCES "hackathon-schema".team_hackathon(nome_team, id_hackathon);
+
+
+--
+-- TOC entry 3299 (class 2606 OID 17342)
+-- Name: voto fk_team_voto; Type: FK CONSTRAINT; Schema: hackathon-schema; Owner: -
+--
+
+ALTER TABLE ONLY "hackathon-schema".voto
+    ADD CONSTRAINT fk_team_voto FOREIGN KEY (nome_team, id_hackathon) REFERENCES "hackathon-schema".team_hackathon(nome_team, id_hackathon);
+
+
+--
+-- TOC entry 3300 (class 2606 OID 17337)
+-- Name: voto fk_voto_giudice; Type: FK CONSTRAINT; Schema: hackathon-schema; Owner: -
+--
+
+ALTER TABLE ONLY "hackathon-schema".voto
+    ADD CONSTRAINT fk_voto_giudice FOREIGN KEY (email_giudice) REFERENCES "hackathon-schema".giudice(email);
+
+
+--
+-- TOC entry 3294 (class 2606 OID 17173)
+-- Name: registrazione registrazione_email_partecipante_fkey; Type: FK CONSTRAINT; Schema: hackathon-schema; Owner: -
+--
+
+ALTER TABLE ONLY "hackathon-schema".registrazione
+    ADD CONSTRAINT registrazione_email_partecipante_fkey FOREIGN KEY (email_partecipante) REFERENCES "hackathon-schema".partecipante(email);
+
+
+--
+-- TOC entry 3295 (class 2606 OID 17178)
+-- Name: registrazione registrazione_id_hackathon_fkey; Type: FK CONSTRAINT; Schema: hackathon-schema; Owner: -
+--
+
+ALTER TABLE ONLY "hackathon-schema".registrazione
+    ADD CONSTRAINT registrazione_id_hackathon_fkey FOREIGN KEY (id_hackathon) REFERENCES "hackathon-schema".hackathon(id_hackathon);
+
+
+--
+-- TOC entry 3292 (class 2606 OID 17163)
+-- Name: team_hackathon team_hackathon_id_hackathon_fkey; Type: FK CONSTRAINT; Schema: hackathon-schema; Owner: -
+--
+
+ALTER TABLE ONLY "hackathon-schema".team_hackathon
+    ADD CONSTRAINT team_hackathon_id_hackathon_fkey FOREIGN KEY (id_hackathon) REFERENCES "hackathon-schema".hackathon(id_hackathon);
+
+
+--
+-- TOC entry 3293 (class 2606 OID 17158)
+-- Name: team_hackathon team_hackathon_nome_team_fkey; Type: FK CONSTRAINT; Schema: hackathon-schema; Owner: -
+--
+
+ALTER TABLE ONLY "hackathon-schema".team_hackathon
+    ADD CONSTRAINT team_hackathon_nome_team_fkey FOREIGN KEY (nome_team) REFERENCES "hackathon-schema".team(nome_team);
+
+
+-- Completed on 2025-07-17 10:15:07 UTC
 
 --
 -- PostgreSQL database dump complete
